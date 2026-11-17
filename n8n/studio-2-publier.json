@@ -1,0 +1,1533 @@
+{
+  "name": "Studio Réseaux — 2. Publier",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Studio Réseaux — 2. Publier\nNe publie **que** ce que j'ai validé dans le Studio (clic « Publier » ou date programmée arrivée).\n- Le Studio appelle le webhook (Vercel `N8N_PUBLISH_WEBHOOK_URL`) au clic : tout de suite, ou avec `quand` = date programmée → n8n **attend** cette heure (1 seule exécution par post).\n- Filet de sécurité toutes les 2 h (7h-23h) : rattrape un oubli. Peu d'exécutions = quota n8n préservé.\n\n`GET /api/n8n/due` → chaque réseau → `PATCH /api/n8n/targets/:id` (statut + lien).",
+        "width": 560,
+        "height": 240,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -900,
+        -420
+      ],
+      "id": "9fb7cdd5-d41a-5b1c-b073-a0cce73b2db1",
+      "name": "Note"
+    },
+    {
+      "parameters": {
+        "content": "### 🔑 Identifiants à choisir\n- **CRM x-api-key** (Header Auth, `x-api-key` = STUDIO_API_KEY)\n- **YouTube OAuth2 API**\n- **LinkedIn OAuth2 API** (cocher *Organization Support* pour la page)\n- **Facebook Graph API** (jeton de Page longue durée → Instagram)\n- **Google Business Profile OAuth2 API**\n- TikTok : rien ici, le jeton est géré par le Studio.",
+        "width": 460,
+        "height": 240,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -320,
+        -420
+      ],
+      "id": "40e0b508-6ef3-51be-8afb-7a994801bdef",
+      "name": "Note comptes"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "studio-publier",
+        "authentication": "headerAuth",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.2,
+      "position": [
+        -900,
+        -60
+      ],
+      "id": "d5ff6e07-7e74-5f17-8cb3-d66b377f5a84",
+      "name": "Réveil par le Studio (webhook)",
+      "webhookId": "e46a60ae-1adc-55e1-9e8b-05708c1bdcd9",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "a-choisir",
+          "name": "CRM x-api-key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resume": "specificTime",
+        "dateTime": "={{ $json.body?.quand && new Date($json.body.quand) > new Date() ? $json.body.quand : $now.plus({ seconds: 2 }).toISO() }}"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -680,
+        -60
+      ],
+      "id": "ba39d28f-2ae1-592e-b167-53492ce599fa",
+      "name": "Attendre l'heure prévue",
+      "webhookId": "84317153-b81e-55ea-a669-675a5b2fa060"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "7 7-23/2 * * *"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -900,
+        120
+      ],
+      "id": "bfeb7607-7b9b-5271-adbf-c1663f9c261d",
+      "name": "Filet de sécurité (toutes les 2 h)"
+    },
+    {
+      "parameters": {
+        "mode": "manual",
+        "includeOtherFields": false,
+        "assignments": {
+          "assignments": [
+            {
+              "id": "p1",
+              "name": "url_studio",
+              "value": "A_REMPLIR https://ton-studio.vercel.app",
+              "type": "string"
+            },
+            {
+              "id": "p2",
+              "name": "linkedin_personne",
+              "value": "identifiant LinkedIn de ton profil (ex. AbC123xyz) — seulement si LinkedIn",
+              "type": "string"
+            },
+            {
+              "id": "p3",
+              "name": "linkedin_page",
+              "value": "identifiant numérique de la page SolveLab (ex. 12345678) — seulement si page",
+              "type": "string"
+            },
+            {
+              "id": "p4",
+              "name": "instagram_compte_id",
+              "value": "identifiant du compte Instagram pro (ex. 1784…) — seulement si Instagram",
+              "type": "string"
+            },
+            {
+              "id": "p5",
+              "name": "compte_google",
+              "value": "accounts/123 — seulement si fiche Google",
+              "type": "string"
+            },
+            {
+              "id": "p6",
+              "name": "etablissement_google",
+              "value": "locations/456 — seulement si fiche Google",
+              "type": "string"
+            },
+            {
+              "id": "p7",
+              "name": "site_web",
+              "value": "https://www.solvelab.fr",
+              "type": "string"
+            },
+            {
+              "id": "p8",
+              "name": "tiktok_confidentialite",
+              "value": "SELF_ONLY",
+              "type": "string"
+            },
+            {
+              "id": "p9",
+              "name": "youtube_visibilite",
+              "value": "public",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -460,
+        30
+      ],
+      "id": "2156fb3b-0485-5217-9ca1-d2f1b305c1a6",
+      "name": "Mes paramètres"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.url_studio }}",
+              "operator": {
+                "type": "string",
+                "operation": "notContains"
+              },
+              "rightValue": "A_REMPLIR"
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        -260,
+        30
+      ],
+      "id": "ce19ad4a-bb71-5467-b526-07d8c3e5db54",
+      "name": "Paramètres remplis ?"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.url_studio.replace(/\\/$/, '') }}/api/n8n/due?limit=10",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "timeout": 20000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -60,
+        30
+      ],
+      "id": "e9d60ab5-c2ee-5dcf-9543-2ffcd3ca3c4b",
+      "name": "Studio : à publier maintenant",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "a-choisir",
+          "name": "CRM x-api-key"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "items",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        100,
+        30
+      ],
+      "id": "f06677dc-c0a1-512d-9c39-f35afbe06504",
+      "name": "Une publication"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.network }}",
+                    "rightValue": "youtube",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "YouTube"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.network }}",
+                    "rightValue": "linkedin",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "LinkedIn"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.network }}",
+                    "rightValue": "tiktok",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "TikTok"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.network }}",
+                    "rightValue": "instagram",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Instagram"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.network }}",
+                    "rightValue": "google",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Google"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        220,
+        30
+      ],
+      "id": "8bd2d6c0-4c33-5abc-9ca0-72db6c859cde",
+      "name": "Quel réseau ?"
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Une publication').item.json.media_url }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file",
+              "outputPropertyName": "data"
+            }
+          },
+          "timeout": 120000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        480,
+        -360
+      ],
+      "id": "1303fc9e-0e73-5fd2-8bef-17a626c524f5",
+      "name": "YouTube : télécharger la vidéo",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 5000,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "resource": "video",
+        "operation": "upload",
+        "title": "={{ $('Une publication').item.json.title }}",
+        "regionCode": "FR",
+        "categoryId": "28",
+        "binaryProperty": "data",
+        "options": {
+          "description": "={{ $('Une publication').item.json.text }}",
+          "privacyStatus": "={{ $('Mes paramètres').first().json.youtube_visibilite }}",
+          "defaultLanguage": "fr",
+          "selfDeclaredMadeForKids": false
+        }
+      },
+      "type": "n8n-nodes-base.youTube",
+      "typeVersion": 1,
+      "position": [
+        720,
+        -360
+      ],
+      "id": "dab1ac4d-e834-52c1-9752-c0cacda4685e",
+      "name": "YouTube : envoyer",
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "youTubeOAuth2Api": {
+          "id": "a-choisir",
+          "name": "YouTube account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const err = (j) => { if (!j) return 'Pas de réponse'; const e = j.error; if (!e) return null; if (typeof e === 'string') return e; return e.message || e.description || JSON.stringify(e).slice(0, 400); };\nconst t = $('Une publication').item.json;\nconst j = $json;\nconst e = err(j);\nconst id = j.uploadId || j.id;\nif (e || !id) return { json: { target_id: t.target_id, status: 'erreur', error: 'YouTube : ' + (e || 'envoi refusé') } };\nreturn { json: { target_id: t.target_id, status: 'publie', external_id: id, url: 'https://youtu.be/' + id, is_private: $('Mes paramètres').first().json.youtube_visibilite !== 'public' } };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        960,
+        -360
+      ],
+      "id": "f2c0a1bc-69a4-5648-a319-aa25a568ce8a",
+      "name": "Résultat YouTube"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.send_media && $json.media_type === 'image' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        480,
+        -160
+      ],
+      "id": "bcb8206c-d4aa-509f-8ed3-a24ef0dd8299",
+      "name": "LinkedIn : avec image ?"
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Une publication').item.json.media_url }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file",
+              "outputPropertyName": "data"
+            }
+          },
+          "timeout": 120000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        720,
+        -220
+      ],
+      "id": "80bb9b2d-9546-5d4d-97df-86dbef373a54",
+      "name": "LinkedIn : télécharger l'image",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 5000,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "postAs": "={{ $('Une publication').item.json.linkedin_mode === 'page' ? 'organization' : 'person' }}",
+        "person": "={{ $('Mes paramètres').first().json.linkedin_personne }}",
+        "organization": "={{ $('Mes paramètres').first().json.linkedin_page }}",
+        "text": "={{ $('Une publication').item.json.text }}",
+        "shareMediaCategory": "IMAGE",
+        "binaryPropertyName": "data",
+        "additionalFields": {
+          "visibility": "PUBLIC"
+        }
+      },
+      "type": "n8n-nodes-base.linkedIn",
+      "typeVersion": 1,
+      "position": [
+        960,
+        -220
+      ],
+      "id": "f0e7e2b5-5178-51ae-962e-7ae6af18722e",
+      "name": "LinkedIn : publier avec image",
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "linkedInOAuth2Api": {
+          "id": "a-choisir",
+          "name": "LinkedIn account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "postAs": "={{ $('Une publication').item.json.linkedin_mode === 'page' ? 'organization' : 'person' }}",
+        "person": "={{ $('Mes paramètres').first().json.linkedin_personne }}",
+        "organization": "={{ $('Mes paramètres').first().json.linkedin_page }}",
+        "text": "={{ $('Une publication').item.json.text }}",
+        "shareMediaCategory": "NONE",
+        "additionalFields": {
+          "visibility": "PUBLIC"
+        }
+      },
+      "type": "n8n-nodes-base.linkedIn",
+      "typeVersion": 1,
+      "position": [
+        960,
+        -100
+      ],
+      "id": "bc04abe7-d703-5d34-aae7-71c2921ef296",
+      "name": "LinkedIn : publier le texte",
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "linkedInOAuth2Api": {
+          "id": "a-choisir",
+          "name": "LinkedIn account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const err = (j) => { if (!j) return 'Pas de réponse'; const e = j.error; if (!e) return null; if (typeof e === 'string') return e; return e.message || e.description || JSON.stringify(e).slice(0, 400); };\nconst t = $('Une publication').item.json;\nconst j = $json;\nconst e = err(j);\nconst urn = j.urn || j.id || j['x-restli-id'];\nif (e) return { json: { target_id: t.target_id, status: 'erreur', error: 'LinkedIn : ' + e } };\nreturn { json: { target_id: t.target_id, status: 'publie', external_id: urn || null, url: urn ? 'https://www.linkedin.com/feed/update/' + urn : null } };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1200,
+        -160
+      ],
+      "id": "9bb4d76c-116e-53f5-8636-2d01878cda55",
+      "name": "Résultat LinkedIn"
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Mes paramètres').first().json.url_studio.replace(/\\/$/, '') }}/api/n8n/tiktok-token",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        480,
+        40
+      ],
+      "id": "baf820b4-72ff-5284-b444-60a03478185b",
+      "name": "TikTok : jeton (Studio)",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "a-choisir",
+          "name": "CRM x-api-key"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Une publication').item.json.media_url }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file",
+              "outputPropertyName": "data"
+            }
+          },
+          "timeout": 120000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        700,
+        40
+      ],
+      "id": "560eae1a-02b6-5cae-8123-b90e4772638b",
+      "name": "TikTok : télécharger la vidéo",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 5000,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Prépare l'envoi direct (FILE_UPLOAD, un seul morceau : fichier ≤ 50 Mo).\nconst t = $('Une publication').item.json;\nconst tok = $('TikTok : jeton (Studio)').item.json;\nif (!tok.access_token) return { json: { _stop: true, erreur: 'TikTok : ' + (tok.error?.message || tok.error || 'pas connecté (page Comptes du Studio)') } };\nif (!$input.item.binary?.data) return { json: { _stop: true, erreur: 'TikTok : vidéo introuvable' } };\nconst buf = await this.helpers.getBinaryDataBuffer($itemIndex, 'data');\nconst size = buf.length;\nconst privacy = $('Mes paramètres').first().json.tiktok_confidentialite || 'SELF_ONLY';\nreturn {\n  json: {\n    access_token: tok.access_token, size, privacy,\n    init_body: {\n      post_info: { title: String(t.text || '').slice(0, 2200), privacy_level: privacy, disable_comment: false, disable_duet: false, disable_stitch: false },\n      source_info: { source: 'FILE_UPLOAD', video_size: size, chunk_size: size, total_chunk_count: 1 },\n    },\n  },\n  binary: $input.item.binary,\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        920,
+        40
+      ],
+      "id": "f1671cda-43a8-57f3-9e6e-eb891eb4410b",
+      "name": "TikTok : préparer"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://open.tiktokapis.com/v2/post/publish/video/init/",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $json.access_token }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.init_body) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1140,
+        40
+      ],
+      "id": "582382af-9a02-5f32-8db0-6183779be5c8",
+      "name": "TikTok : déclarer la vidéo",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Remet la vidéo (le nœud précédent ne la transmet pas) et vérifie la réponse de TikTok.\nconst prep = $('TikTok : préparer').item;\nif (prep.json._stop) return { json: { _stop: true, erreur: prep.json.erreur } };\nconst d = $json.data ?? {};\nif (!d.upload_url) return { json: { _stop: true, erreur: 'TikTok : ' + ($json.error?.message || $json.error?.code || 'déclaration refusée') } };\nreturn { json: { upload_url: d.upload_url, publish_id: d.publish_id, size: prep.json.size, access_token: prep.json.access_token, privacy: prep.json.privacy }, binary: prep.binary };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1360,
+        40
+      ],
+      "id": "a56e51ff-0af4-55f8-ae22-af0938a9e21a",
+      "name": "TikTok : remettre la vidéo"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ !$json._stop }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1580,
+        40
+      ],
+      "id": "477ac4c5-3bb3-58de-a2d2-e69b6e07d71b",
+      "name": "TikTok : envoi possible ?"
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "={{ $json.upload_url }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "video/mp4"
+            },
+            {
+              "name": "Content-Range",
+              "value": "=bytes 0-{{ $json.size - 1 }}/{{ $json.size }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "binaryData",
+        "inputDataFieldName": "data",
+        "options": {
+          "timeout": 300000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1800,
+        -20
+      ],
+      "id": "ff7b87e5-f429-5615-bc84-2dc5a7f6a8f8",
+      "name": "TikTok : envoyer la vidéo",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "resume": "timeInterval",
+        "amount": 30,
+        "unit": "seconds"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2020,
+        -20
+      ],
+      "id": "fde04992-81f5-5c4a-b6b5-34931ac4e928",
+      "name": "TikTok : attendre le traitement",
+      "webhookId": "0260ef1e-72a4-55c6-9277-0512fa75428d"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://open.tiktokapis.com/v2/post/publish/status/fetch/",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('TikTok : remettre la vidéo').item.json.access_token }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ publish_id: $('TikTok : remettre la vidéo').item.json.publish_id }) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2240,
+        -20
+      ],
+      "id": "f9023228-90c8-572e-a5ab-5c75f4e1ae43",
+      "name": "TikTok : état",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const err = (j) => { if (!j) return 'Pas de réponse'; const e = j.error; if (!e) return null; if (typeof e === 'string') return e; return e.message || e.description || JSON.stringify(e).slice(0, 400); };\nconst t = $('Une publication').item.json;\nconst j = $json;\nif (j._stop) return { json: { target_id: t.target_id, status: 'erreur', error: j.erreur } };\nconst up = $('TikTok : remettre la vidéo').item.json;\nconst s = j.data?.status;\nif (s === 'FAILED') return { json: { target_id: t.target_id, status: 'erreur', error: 'TikTok : ' + (j.data?.fail_reason || 'publication refusée') } };\nconst postId = (j.data?.publicaly_available_post_id || [])[0];\nreturn { json: { target_id: t.target_id, status: 'publie', external_id: postId ? String(postId) : up.publish_id, url: postId ? 'https://www.tiktok.com/video/' + postId : null, is_private: up.privacy === 'SELF_ONLY' } };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2460,
+        40
+      ],
+      "id": "ca9a1542-3181-558a-83af-d36dc7a6ab88",
+      "name": "Résultat TikTok"
+    },
+    {
+      "parameters": {
+        "hostUrl": "graph.facebook.com",
+        "httpRequestMethod": "POST",
+        "graphApiVersion": "v21.0",
+        "node": "={{ $('Mes paramètres').first().json.instagram_compte_id }}",
+        "edge": "media",
+        "options": {
+          "queryParametersJson": "={{ JSON.stringify($json.media_type === 'video' ? { media_type: 'REELS', video_url: $json.media_url, caption: $json.text, share_to_feed: true } : { image_url: $json.media_url, caption: $json.text }) }}"
+        }
+      },
+      "type": "n8n-nodes-base.facebookGraphApi",
+      "typeVersion": 1.1,
+      "position": [
+        480,
+        260
+      ],
+      "id": "426d58d8-7d1c-5262-a2df-66347cee1053",
+      "name": "Instagram : créer le média",
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "facebookGraphApi": {
+          "id": "a-choisir",
+          "name": "Facebook Graph account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resume": "timeInterval",
+        "amount": 15,
+        "unit": "seconds"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        700,
+        260
+      ],
+      "id": "a8e541eb-862a-5efc-a91d-39483dd4888b",
+      "name": "Instagram : attendre",
+      "webhookId": "248580cb-eaed-55e0-af88-bdcec4082f31"
+    },
+    {
+      "parameters": {
+        "hostUrl": "graph.facebook.com",
+        "httpRequestMethod": "GET",
+        "graphApiVersion": "v21.0",
+        "node": "={{ $('Instagram : créer le média').item.json.id }}",
+        "options": {
+          "fields": {
+            "field": [
+              {
+                "name": "status_code"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.facebookGraphApi",
+      "typeVersion": 1.1,
+      "position": [
+        920,
+        260
+      ],
+      "id": "397ff518-3be5-54ca-a3fc-6f540c63f678",
+      "name": "Instagram : état du média",
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "facebookGraphApi": {
+          "id": "a-choisir",
+          "name": "Facebook Graph account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ !$('Instagram : créer le média').item.json.id || $json.error || $json.status_code === 'ERROR' || $json.status_code === 'EXPIRED' || ($json.status_code !== 'FINISHED' && $runIndex >= 20) }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Échec"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.status_code }}",
+                    "rightValue": "FINISHED",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Prêt"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra",
+          "renameFallbackOutput": "Pas encore"
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        1140,
+        260
+      ],
+      "id": "80d3f47d-612b-50b4-98ca-5f5a7a342e7f",
+      "name": "Instagram : prêt ?"
+    },
+    {
+      "parameters": {
+        "hostUrl": "graph.facebook.com",
+        "httpRequestMethod": "POST",
+        "graphApiVersion": "v21.0",
+        "node": "={{ $('Mes paramètres').first().json.instagram_compte_id }}",
+        "edge": "media_publish",
+        "options": {
+          "queryParameters": {
+            "parameter": [
+              {
+                "name": "creation_id",
+                "value": "={{ $('Instagram : créer le média').item.json.id }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.facebookGraphApi",
+      "typeVersion": 1.1,
+      "position": [
+        1360,
+        200
+      ],
+      "id": "aa609d56-3651-5b7f-8f6d-7f406be02e44",
+      "name": "Instagram : publier",
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "facebookGraphApi": {
+          "id": "a-choisir",
+          "name": "Facebook Graph account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "hostUrl": "graph.facebook.com",
+        "httpRequestMethod": "GET",
+        "graphApiVersion": "v21.0",
+        "node": "={{ $json.id }}",
+        "options": {
+          "fields": {
+            "field": [
+              {
+                "name": "permalink"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.facebookGraphApi",
+      "typeVersion": 1.1,
+      "position": [
+        1580,
+        200
+      ],
+      "id": "58cb58bd-ecd4-5ee4-ab26-0374dab466a1",
+      "name": "Instagram : lien",
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "facebookGraphApi": {
+          "id": "a-choisir",
+          "name": "Facebook Graph account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const err = (j) => { if (!j) return 'Pas de réponse'; const e = j.error; if (!e) return null; if (typeof e === 'string') return e; return e.message || e.description || JSON.stringify(e).slice(0, 400); };\nconst t = $('Une publication').item.json;\nconst j = $json;\nconst created = $('Instagram : créer le média').item.json;\nif (!created.id) return { json: { target_id: t.target_id, status: 'erreur', error: 'Instagram : ' + (err(created) || 'média refusé') } };\nlet pub = null; try { pub = $('Instagram : publier').item.json; } catch (x) { pub = null; }\nif (!pub || !pub.id) return { json: { target_id: t.target_id, status: 'erreur', error: 'Instagram : ' + (err(pub) || err(j) || ('média non prêt (' + (j.status_code || 'inconnu') + ')')) } };\nreturn { json: { target_id: t.target_id, status: 'publie', external_id: pub.id, url: j.permalink || null } };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1800,
+        260
+      ],
+      "id": "6c4cf4dd-c317-5128-8ff7-259b32900321",
+      "name": "Résultat Instagram"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://mybusiness.googleapis.com/v4/{{ $('Mes paramètres').first().json.compte_google }}/{{ $('Mes paramètres').first().json.etablissement_google }}/localPosts",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleBusinessProfileOAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify(Object.assign({ languageCode: 'fr', topicType: 'STANDARD', summary: $json.text, callToAction: { actionType: 'LEARN_MORE', url: $('Mes paramètres').first().json.site_web } }, $json.send_media && $json.media_type === 'image' ? { media: [{ mediaFormat: 'PHOTO', sourceUrl: $json.media_url }] } : {})) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        480,
+        460
+      ],
+      "id": "14d00e8e-d16c-52df-b8ca-214b50089762",
+      "name": "Google : publier",
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "googleBusinessProfileOAuth2Api": {
+          "id": "a-choisir",
+          "name": "Google Business Profile account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const err = (j) => { if (!j) return 'Pas de réponse'; const e = j.error; if (!e) return null; if (typeof e === 'string') return e; return e.message || e.description || JSON.stringify(e).slice(0, 400); };\nconst t = $('Une publication').item.json;\nconst j = $json;\nconst e = err(j);\nif (e || !j.name) return { json: { target_id: t.target_id, status: 'erreur', error: 'Fiche Google : ' + (e || 'publication refusée') } };\nreturn { json: { target_id: t.target_id, status: 'publie', external_id: j.name, url: j.searchUrl || null } };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        720,
+        460
+      ],
+      "id": "8bbd15e7-a26c-5fdf-8970-a734a810236e",
+      "name": "Résultat Google"
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ $('Mes paramètres').first().json.url_studio.replace(/\\/$/, '') }}/api/n8n/targets/{{ $json.target_id }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2700,
+        60
+      ],
+      "id": "5f2577f3-8588-5a6e-9dc1-74631fffce82",
+      "name": "Studio : noter le résultat",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "a-choisir",
+          "name": "CRM x-api-key"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000
+    }
+  ],
+  "connections": {
+    "Réveil par le Studio (webhook)": {
+      "main": [
+        [
+          {
+            "node": "Attendre l'heure prévue",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Attendre l'heure prévue": {
+      "main": [
+        [
+          {
+            "node": "Mes paramètres",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filet de sécurité (toutes les 2 h)": {
+      "main": [
+        [
+          {
+            "node": "Mes paramètres",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mes paramètres": {
+      "main": [
+        [
+          {
+            "node": "Paramètres remplis ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Paramètres remplis ?": {
+      "main": [
+        [
+          {
+            "node": "Studio : à publier maintenant",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Studio : à publier maintenant": {
+      "main": [
+        [
+          {
+            "node": "Une publication",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Une publication": {
+      "main": [
+        [
+          {
+            "node": "Quel réseau ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Quel réseau ?": {
+      "main": [
+        [
+          {
+            "node": "YouTube : télécharger la vidéo",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "LinkedIn : avec image ?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "TikTok : jeton (Studio)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Instagram : créer le média",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Google : publier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "YouTube : télécharger la vidéo": {
+      "main": [
+        [
+          {
+            "node": "YouTube : envoyer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "YouTube : envoyer": {
+      "main": [
+        [
+          {
+            "node": "Résultat YouTube",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LinkedIn : avec image ?": {
+      "main": [
+        [
+          {
+            "node": "LinkedIn : télécharger l'image",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "LinkedIn : publier le texte",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LinkedIn : télécharger l'image": {
+      "main": [
+        [
+          {
+            "node": "LinkedIn : publier avec image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LinkedIn : publier avec image": {
+      "main": [
+        [
+          {
+            "node": "Résultat LinkedIn",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LinkedIn : publier le texte": {
+      "main": [
+        [
+          {
+            "node": "Résultat LinkedIn",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TikTok : jeton (Studio)": {
+      "main": [
+        [
+          {
+            "node": "TikTok : télécharger la vidéo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TikTok : télécharger la vidéo": {
+      "main": [
+        [
+          {
+            "node": "TikTok : préparer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TikTok : préparer": {
+      "main": [
+        [
+          {
+            "node": "TikTok : déclarer la vidéo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TikTok : déclarer la vidéo": {
+      "main": [
+        [
+          {
+            "node": "TikTok : remettre la vidéo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TikTok : remettre la vidéo": {
+      "main": [
+        [
+          {
+            "node": "TikTok : envoi possible ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TikTok : envoi possible ?": {
+      "main": [
+        [
+          {
+            "node": "TikTok : envoyer la vidéo",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Résultat TikTok",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TikTok : envoyer la vidéo": {
+      "main": [
+        [
+          {
+            "node": "TikTok : attendre le traitement",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TikTok : attendre le traitement": {
+      "main": [
+        [
+          {
+            "node": "TikTok : état",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TikTok : état": {
+      "main": [
+        [
+          {
+            "node": "Résultat TikTok",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Instagram : créer le média": {
+      "main": [
+        [
+          {
+            "node": "Instagram : attendre",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Instagram : attendre": {
+      "main": [
+        [
+          {
+            "node": "Instagram : état du média",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Instagram : état du média": {
+      "main": [
+        [
+          {
+            "node": "Instagram : prêt ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Instagram : prêt ?": {
+      "main": [
+        [
+          {
+            "node": "Résultat Instagram",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Instagram : publier",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Instagram : attendre",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Instagram : publier": {
+      "main": [
+        [
+          {
+            "node": "Instagram : lien",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Instagram : lien": {
+      "main": [
+        [
+          {
+            "node": "Résultat Instagram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google : publier": {
+      "main": [
+        [
+          {
+            "node": "Résultat Google",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Résultat YouTube": {
+      "main": [
+        [
+          {
+            "node": "Studio : noter le résultat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Résultat LinkedIn": {
+      "main": [
+        [
+          {
+            "node": "Studio : noter le résultat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Résultat TikTok": {
+      "main": [
+        [
+          {
+            "node": "Studio : noter le résultat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Résultat Instagram": {
+      "main": [
+        [
+          {
+            "node": "Studio : noter le résultat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Résultat Google": {
+      "main": [
+        [
+          {
+            "node": "Studio : noter le résultat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Europe/Paris"
+  },
+  "pinData": {}
+}
