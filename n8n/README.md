@@ -1,15 +1,15 @@
-# Workflows n8n du Studio Réseaux
+# Workflow n8n du Studio Réseaux
+
+Un seul workflow : **[`studio-publier.json`](studio-publier.json)**. L'écriture des textes est faite par l'assistant du Studio (Claude), pas par n8n.
 
 | # | Fichier | Déclencheur | Rôle |
 |---|---|---|---|
-| 1 | [`studio-1-adapter.json`](studio-1-adapter.json) | webhook `studio-adapter` (bouton « Adapter avec l'IA ») | Gemini écrit une version du texte par réseau et répond tout de suite. **Ne publie rien.** |
-| 2 | [`studio-2-publier.json`](studio-2-publier.json) | webhook `studio-publier` (clic « Publier » / « Programmer ») + filet de sécurité toutes les 2 h | `GET /api/n8n/due` → publie réseau par réseau → `PATCH /api/n8n/targets/:id` |
+| 2 | [`studio-publier.json`](studio-publier.json) | webhook `studio-publier` (clic « Publier » / « Programmer ») + filet de sécurité toutes les 2 h | `GET /api/n8n/due` → publie réseau par réseau → `PATCH /api/n8n/targets/:id` |
 
 Les fichiers sont générés par [`generer_workflows.py`](generer_workflows.py) (`python3 n8n/generer_workflows.py n8n`) : modifier le script plutôt que les JSON à la main.
 
 ## Installation
 
-1. n8n → *Overview* → **Create workflow → ⋯ → Import from file** → `studio-1-adapter.json`, puis pareil pour `studio-2-publier.json`. Range-les dans un dossier « Studio Réseaux ».
 2. **Identifiants** (ouvrir chaque nœud marqué d'un triangle rouge) :
    - **CRM x-api-key** (*Header Auth*, nom `x-api-key`, valeur = `STUDIO_API_KEY`) : sur les 2 webhooks et les appels au Studio. Si `STUDIO_API_KEY` = `CRM_API_KEY`, reprends l'identifiant du CRM.
    - **Google Gemini(PaLM) Api account** : déjà relié (ton identifiant existant).
@@ -27,7 +27,7 @@ Les fichiers sont générés par [`generer_workflows.py`](generer_workflows.py) 
 | `tiktok_confidentialite` | `SELF_ONLY` → `PUBLIC_TO_EVERYONE` après l'audit TikTok | — |
 | `youtube_visibilite` | `public` (`unlisted` / `private` possibles) | — |
 
-4. **Publish** les 2 workflows, puis copie les *Production URL* des 2 webhooks dans Vercel : `N8N_ADAPT_WEBHOOK_URL` et `N8N_PUBLISH_WEBHOOK_URL` → *Redeploy*.
+4. **Publish** les 2 workflows, puis copie les *Production URL* des 2 webhooks dans Vercel : `N8N_PUBLISH_WEBHOOK_URL`` → *Redeploy*.
 
 ## Comment se passe une publication
 

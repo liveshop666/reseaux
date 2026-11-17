@@ -1,9 +1,9 @@
 {
-  "name": "Studio Réseaux — 2. Publier",
+  "name": "Studio Réseaux — Publier",
   "nodes": [
     {
       "parameters": {
-        "content": "## Studio Réseaux — 2. Publier\nNe publie **que** ce que j'ai validé dans le Studio (clic « Publier » ou date programmée arrivée).\n- Le Studio appelle le webhook (Vercel `N8N_PUBLISH_WEBHOOK_URL`) au clic : tout de suite, ou avec `quand` = date programmée → n8n **attend** cette heure (1 seule exécution par post).\n- Filet de sécurité toutes les 2 h (7h-23h) : rattrape un oubli. Peu d'exécutions = quota n8n préservé.\n\n`GET /api/n8n/due` → chaque réseau → `PATCH /api/n8n/targets/:id` (statut + lien).",
+        "content": "## Studio Réseaux — Publier\nNe publie **que** ce que j'ai validé dans le Studio (clic « Publier » ou date programmée arrivée).\n- Le Studio appelle le webhook (Vercel `N8N_PUBLISH_WEBHOOK_URL`) au clic : tout de suite, ou avec `quand` = date programmée → n8n **attend** cette heure (1 seule exécution par post).\n- Filet de sécurité toutes les 2 h (7h-23h) : rattrape un oubli. Peu d'exécutions = quota n8n préservé.\n\n`GET /api/n8n/due` → chaque réseau → `PATCH /api/n8n/targets/:id` (statut + lien).",
         "width": 560,
         "height": 240,
         "color": 4

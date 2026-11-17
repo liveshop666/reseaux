@@ -40,9 +40,5 @@ export type Account = {
   last_error_at: string | null;
 };
 
-/** Texte adapté à un réseau (aperçu). */
-export type Adapted = { title?: string; text: string };
-export type AdaptedMap = Partial<Record<Network, Adapted>>;
-
 /** Statut global d'un post, calculé à partir de ses réseaux. */
 export type PostStatus = "programme" | "en_cours" | "publie" | "partiel" | "erreur" | "annule";
