@@ -22,7 +22,7 @@ export default async function Comptes({ searchParams }: { searchParams: Promise<
   if (isMissingTable(error)) return <SetupNotice title="Comptes connectés" />;
   const accounts = (data ?? []) as Account[];
   const tiktok = await tiktokStatus();
-  const n8nReady = { adapt: !!process.env.N8N_ADAPT_WEBHOOK_URL, publish: !!process.env.N8N_PUBLISH_WEBHOOK_URL };
+  const n8nReady = { ia: !!process.env.ANTHROPIC_API_KEY, publish: !!process.env.N8N_PUBLISH_WEBHOOK_URL };
 
   return (
     <div className="mx-auto max-w-5xl">
@@ -32,9 +32,9 @@ export default async function Comptes({ searchParams }: { searchParams: Promise<
       {sp.tiktok && TIKTOK_MSG[sp.tiktok] && <div className="card mb-4 p-3 text-sm">{TIKTOK_MSG[sp.tiktok]}</div>}
 
       <section className="card mb-6 p-4 text-sm">
-        <h2 className="mb-2 font-head text-xl font-extrabold uppercase">Moteur n8n</h2>
+        <h2 className="mb-2 font-head text-xl font-extrabold uppercase">Moteur</h2>
         <ul className="space-y-1">
-          <li>{n8nReady.adapt ? "✅" : "⚪"} IA (Gemini) pour adapter les textes — <code>N8N_ADAPT_WEBHOOK_URL</code>{!n8nReady.adapt && " : sans elle, ton texte est repris tel quel"}</li>
+          <li>{n8nReady.ia ? "✅" : "❌"} Assistant (Claude) — <code>ANTHROPIC_API_KEY</code>{!n8nReady.ia && " : sans elle, la conversation ne répond pas"}</li>
           <li>{n8nReady.publish ? "✅" : "⚪"} Publication (au clic et à l&apos;heure programmée) — <code>N8N_PUBLISH_WEBHOOK_URL</code>{!n8nReady.publish && " : sans elle, n8n ne passe que toutes les 2 h"}</li>
         </ul>
       </section>

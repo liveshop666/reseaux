@@ -103,7 +103,7 @@ I = "$('Une publication').item.json"
 STUDIO = f"{P}.url_studio.replace(/\\/$/, '')"
 
 n2, c2 = [], {}
-n2.append(note("Note", "## Studio Réseaux — 2. Publier\nNe publie **que** ce que j'ai validé dans le Studio (clic « Publier » ou date programmée arrivée).\n- Le Studio appelle le webhook (Vercel `N8N_PUBLISH_WEBHOOK_URL`) au clic : tout de suite, ou avec `quand` = date programmée → n8n **attend** cette heure (1 seule exécution par post).\n- Filet de sécurité toutes les 2 h (7h-23h) : rattrape un oubli. Peu d'exécutions = quota n8n préservé.\n\n`GET /api/n8n/due` → chaque réseau → `PATCH /api/n8n/targets/:id` (statut + lien).", [-900, -420], 560, 240, 4))
+n2.append(note("Note", "## Studio Réseaux — Publier\nNe publie **que** ce que j'ai validé dans le Studio (clic « Publier » ou date programmée arrivée).\n- Le Studio appelle le webhook (Vercel `N8N_PUBLISH_WEBHOOK_URL`) au clic : tout de suite, ou avec `quand` = date programmée → n8n **attend** cette heure (1 seule exécution par post).\n- Filet de sécurité toutes les 2 h (7h-23h) : rattrape un oubli. Peu d'exécutions = quota n8n préservé.\n\n`GET /api/n8n/due` → chaque réseau → `PATCH /api/n8n/targets/:id` (statut + lien).", [-900, -420], 560, 240, 4))
 n2.append(note("Note comptes", "### 🔑 Identifiants à choisir\n- **CRM x-api-key** (Header Auth, `x-api-key` = STUDIO_API_KEY)\n- **YouTube OAuth2 API**\n- **LinkedIn OAuth2 API** (cocher *Organization Support* pour la page)\n- **Facebook Graph API** (jeton de Page longue durée → Instagram)\n- **Google Business Profile OAuth2 API**\n- TikTok : rien ici, le jeton est géré par le Studio.", [-320, -420], 460, 240, 6))
 
 n2.append(node("Réveil par le Studio (webhook)", "n8n-nodes-base.webhook", 2.2,
@@ -345,10 +345,10 @@ n2.append(node("Studio : noter le résultat", "n8n-nodes-base.httpRequest", 4.2,
 for r in ["Résultat YouTube", "Résultat LinkedIn", "Résultat TikTok", "Résultat Instagram", "Résultat Google"]:
     connect(c2, r, "Studio : noter le résultat")
 
-wf2 = {"name": "Studio Réseaux — 2. Publier", "nodes": n2, "connections": c2,
+wf2 = {"name": "Studio Réseaux — Publier", "nodes": n2, "connections": c2,
        "settings": {"executionOrder": "v1", "timezone": "Europe/Paris"}, "pinData": {}}
 
-for fn, wf in [("studio-1-adapter.json", wf1), ("studio-2-publier.json", wf2)]:
+for fn, wf in [("studio-publier.json", wf2)]:
     names = {n["name"] for n in wf["nodes"]}
     for src, v in wf["connections"].items():
         assert src in names, src

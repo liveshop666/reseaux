@@ -2,7 +2,7 @@
 
 > À copier dans le coffre : `cerveau/projets/studio-reseaux.md` (la session cloud n'a pas accès à C:\Users\nolla\jarvis-workspace).
 
-- **Quoi** : appli séparée du CRM, seulement pour mes réseaux (YouTube, LinkedIn, TikTok, Instagram, fiche Google). J'écris → je coche → l'IA adapte → aperçu → publication seulement après mon clic (ou date programmée).
+- **Quoi** : appli séparée du CRM, seulement pour mes réseaux (YouTube, TikTok, Instagram, LinkedIn, fiche Google). Interface = conversation façon Claude Code (+ médias, micro, envoyer) au design solvelab.fr ; un onglet par réseau pour voir ce qui a été publié. L'assistant (Claude) écrit les textes, monte la vidéo (dans le navigateur, gratuit), montre l'aperçu et ne publie qu'après mon « je valide ».
 - **Dépôt** : `liveshop666/reseaux` (branche de travail `claude/optimistic-cray-ce849q`)
 - **Base** : même stack que `liveshop666/crm-prospection` — Next.js 15, Tailwind 4, Supabase projet `crm-prospection` (tables `social_*`, bucket `reseaux-medias`), accès `ALLOWED_EMAILS`.
 - **Publication** : n8n, workflows « Studio Réseaux — 1. Adapter le texte (Gemini) » et « 2. Publier » (webhooks protégés par x-api-key = `STUDIO_API_KEY`). IA = identifiant Gemini déjà dans n8n.
@@ -11,3 +11,4 @@
 
 ## Journal
 - 2026-11-17 — Studio créé (pages Accueil, Nouveau post, Historique, Comptes ; API n8n ; connexion TikTok directe ; 2 workflows n8n à importer). Reste : lancer le SQL dans Supabase, déployer sur Vercel, importer les workflows, brancher les comptes un par un.
+- 2026-11-17 — Recentrage : plus de formulaire, conversation avec assistant Claude + onglets par réseau. Tables social_messages / social_drafts créées. Reste : clé ANTHROPIC_API_KEY dans Vercel, donner à Vercel l'accès GitHub au dépôt reseaux, importer le workflow n8n Publier, brancher les comptes.
