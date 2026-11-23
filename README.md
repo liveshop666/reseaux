@@ -1,6 +1,6 @@
 # Studio Réseaux SolveLab
 
-Une appli **à part du CRM**, uniquement pour mes réseaux sociaux : **YouTube · TikTok · Instagram · LinkedIn · fiche Google**.
+Une appli **à part du CRM**, uniquement pour mes réseaux sociaux : **YouTube · TikTok · Instagram · Facebook · LinkedIn · fiche Google**.
 
 Je parle à un assistant comme dans Claude Code (bouton **+** pour mes photos et vidéos, **micro** pour dicter, bouton envoyer), dans le design de solvelab.fr. Il écrit les textes pour chaque réseau, monte la vidéo, me montre un aperçu, me dit ce qu'il fait — et **ne publie qu'après mon « je valide »**. Dans l'onglet de chaque réseau, je retrouve ce qu'il a publié.
 
@@ -12,7 +12,7 @@ Je parle à un assistant comme dans Claude Code (bouton **+** pour mes photos et
 │ ▶️ 🎵 📸 💼 📍 un onglet par réseau │ ◀── GET /due ── │ YouTube · LinkedIn · TikTok│
 │ 🗂️ Tout · 🔌 Comptes                │ ◀── PATCH ───── │ Instagram · fiche Google   │
 └───────────────┬───────────────────┘   (x-api-key)   └───────────────────────────┘
-                │ Supabase : même projet que le CRM (tables social_*, bucket reseaux-medias)
+                │ Supabase : projet SÉPARÉ du CRM, à créer plus tard (tables social_*, bucket reseaux-medias)
 ```
 
 ## Comment ça se passe
@@ -41,7 +41,7 @@ Je parle à un assistant comme dans Claude Code (bouton **+** pour mes photos et
 
 ## Installation
 
-1. **Supabase** (projet `crm-prospection`) → *SQL Editor* → lancer [`0001_studio_reseaux.sql`](supabase/migrations/0001_studio_reseaux.sql) puis [`0002_assistant.sql`](supabase/migrations/0002_assistant.sql). Tables `social_*` + bucket public `reseaux-medias`. Rien ne touche au CRM.
+1. **Supabase** (projet **séparé** `studio-reseaux`, PAS celui du CRM — pas encore créé : limite de 2 projets gratuits atteinte, décidé le 2026-11-23) → *SQL Editor* → lancer [`0001_studio_reseaux.sql`](supabase/migrations/0001_studio_reseaux.sql) puis [`0002_assistant.sql`](supabase/migrations/0002_assistant.sql) puis [`0003_facebook.sql`](supabase/migrations/0003_facebook.sql). Tables `social_*` + bucket public `reseaux-medias`. Rien ne touche au CRM.
 2. **Vercel** → importer `liveshop666/reseaux` → variables de [`.env.example`](.env.example) :
    - `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `ALLOWED_EMAILS`, `NEXT_PUBLIC_APP_URL`
    - `STUDIO_API_KEY` (clé partagée avec n8n)
@@ -62,6 +62,7 @@ Je parle à un assistant comme dans Claude Code (bouton **+** pour mes photos et
 | LinkedIn | texte, photo | **pas de vidéo** avec le module n8n (le texte part seul) ; **page SolveLab** seulement après validation de LinkedIn |
 | TikTok | vidéo (obligatoire) | **privé** tant que l'app TikTok n'est pas auditée |
 | Instagram | photo ou vidéo (obligatoire) | compte **professionnel** relié à la page Facebook + app Meta |
+| Facebook | texte, photo, vidéo | publie sur une **Page** (pas le profil perso) ; app Meta + jeton de Page (`pages_manage_posts`) ; `facebook_page_id` dans « Mes paramètres » n8n |
 | Fiche Google | texte, photo | Google doit **valider l'accès** à l'API ; pas de vidéo, pas de numéro de téléphone dans le texte |
 
 Médias : JPG, PNG, WEBP, MP4, MOV, **50 Mo max**. Le montage vidéo demande un navigateur qui enregistre en MP4 (Chrome / Edge récents, Safari) ; il est **muet** pour l'instant (pas de musique).

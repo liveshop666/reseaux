@@ -19,7 +19,7 @@
     },
     {
       "parameters": {
-        "content": "### 🔑 Identifiants à choisir\n- **CRM x-api-key** (Header Auth, `x-api-key` = STUDIO_API_KEY)\n- **YouTube OAuth2 API**\n- **LinkedIn OAuth2 API** (cocher *Organization Support* pour la page)\n- **Facebook Graph API** (jeton de Page longue durée → Instagram)\n- **Google Business Profile OAuth2 API**\n- TikTok : rien ici, le jeton est géré par le Studio.",
+        "content": "### 🔑 Identifiants à choisir\n- **CRM x-api-key** (Header Auth, `x-api-key` = STUDIO_API_KEY)\n- **YouTube OAuth2 API**\n- **LinkedIn OAuth2 API** (cocher *Organization Support* pour la page)\n- **Facebook Graph API** (jeton de Page longue durée → Instagram et Page Facebook)\n- **Google Business Profile OAuth2 API**\n- TikTok : rien ici, le jeton est géré par le Studio.",
         "width": 460,
         "height": 240,
         "color": 6
@@ -120,6 +120,12 @@
               "id": "p4",
               "name": "instagram_compte_id",
               "value": "identifiant du compte Instagram pro (ex. 1784…) — seulement si Instagram",
+              "type": "string"
+            },
+            {
+              "id": "p10",
+              "name": "facebook_page_id",
+              "value": "identifiant de la Page Facebook (ex. 1234567890) — seulement si Facebook",
               "type": "string"
             },
             {
@@ -350,6 +356,28 @@
               },
               "renameOutput": true,
               "outputKey": "Google"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.network }}",
+                    "rightValue": "facebook",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Facebook"
             }
           ]
         },
@@ -1054,6 +1082,106 @@
     },
     {
       "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.send_media && $json.media_type === 'video' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        480,
+        640
+      ],
+      "id": "7685a425-63ff-51ba-a616-0a7ced9e5b90",
+      "name": "Facebook : vidéo ?"
+    },
+    {
+      "parameters": {
+        "hostUrl": "graph-video.facebook.com",
+        "httpRequestMethod": "POST",
+        "graphApiVersion": "v21.0",
+        "node": "={{ $('Mes paramètres').first().json.facebook_page_id }}",
+        "edge": "videos",
+        "options": {
+          "queryParametersJson": "={{ JSON.stringify({ file_url: $json.media_url, description: $json.text }) }}"
+        }
+      },
+      "type": "n8n-nodes-base.facebookGraphApi",
+      "typeVersion": 1.1,
+      "position": [
+        720,
+        580
+      ],
+      "id": "385b4490-8185-58b5-aef4-6b8a16d998be",
+      "name": "Facebook : publier la vidéo",
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "facebookGraphApi": {
+          "id": "a-choisir",
+          "name": "Facebook Graph account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "hostUrl": "graph.facebook.com",
+        "httpRequestMethod": "POST",
+        "graphApiVersion": "v21.0",
+        "node": "={{ $('Mes paramètres').first().json.facebook_page_id }}",
+        "edge": "={{ $json.send_media && $json.media_type === 'image' ? 'photos' : 'feed' }}",
+        "options": {
+          "queryParametersJson": "={{ JSON.stringify($json.send_media && $json.media_type === 'image' ? { url: $json.media_url, caption: $json.text } : { message: $json.text }) }}"
+        }
+      },
+      "type": "n8n-nodes-base.facebookGraphApi",
+      "typeVersion": 1.1,
+      "position": [
+        720,
+        700
+      ],
+      "id": "e369a1f0-cde9-50dc-8160-bade74bd998d",
+      "name": "Facebook : publier (texte ou photo)",
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "facebookGraphApi": {
+          "id": "a-choisir",
+          "name": "Facebook Graph account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const err = (j) => { if (!j) return 'Pas de réponse'; const e = j.error; if (!e) return null; if (typeof e === 'string') return e; return e.message || e.description || JSON.stringify(e).slice(0, 400); };\nconst t = $('Une publication').item.json;\nconst j = $json;\nconst e = err(j);\nconst id = j.post_id || j.id;\nif (e || !id) return { json: { target_id: t.target_id, status: 'erreur', error: 'Facebook : ' + (e || 'publication refusée') } };\nreturn { json: { target_id: t.target_id, status: 'publie', external_id: String(id), url: 'https://www.facebook.com/' + id } };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        960,
+        640
+      ],
+      "id": "268e2688-ad2e-5f75-936e-bc9575cfea59",
+      "name": "Résultat Facebook"
+    },
+    {
+      "parameters": {
         "method": "PATCH",
         "url": "={{ $('Mes paramètres').first().json.url_studio.replace(/\\/$/, '') }}/api/n8n/targets/{{ $json.target_id }}",
         "authentication": "genericCredentialType",
@@ -1193,6 +1321,13 @@
         [
           {
             "node": "Google : publier",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Facebook : vidéo ?",
             "type": "main",
             "index": 0
           }
@@ -1469,6 +1604,46 @@
         ]
       ]
     },
+    "Facebook : vidéo ?": {
+      "main": [
+        [
+          {
+            "node": "Facebook : publier la vidéo",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Facebook : publier (texte ou photo)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Facebook : publier la vidéo": {
+      "main": [
+        [
+          {
+            "node": "Résultat Facebook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Facebook : publier (texte ou photo)": {
+      "main": [
+        [
+          {
+            "node": "Résultat Facebook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
     "Résultat YouTube": {
       "main": [
         [
@@ -1514,6 +1689,17 @@
       ]
     },
     "Résultat Google": {
+      "main": [
+        [
+          {
+            "node": "Studio : noter le résultat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Résultat Facebook": {
       "main": [
         [
           {
