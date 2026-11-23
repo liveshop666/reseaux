@@ -31,6 +31,7 @@ const REGLES = {
   linkedin: "LinkedIn : ton professionnel mais humain, à la première personne. 1re ligne = accroche forte (elle s'affiche avant « voir plus »). Paragraphes courts, aérés, 0 à 3 emojis maximum. Finir par une question ou un appel à l'action, puis 3 à 5 hashtags pertinents.",
   tiktok: "TikTok : légende courte et punchy (idéalement moins de 150 caractères), ton direct et dynamique, 1 ou 2 emojis, puis 3 à 5 hashtags (dont des hashtags larges et un de niche).",
   instagram: "Instagram : 1re ligne accrocheuse (avant « plus »), texte chaleureux avec quelques emojis, sauts de ligne, appel à l'action (« lien dans la bio », commenter, enregistrer), puis 8 à 12 hashtags à la fin.",
+  facebook: "Facebook (Page) : 1re ligne accrocheuse (avant « Voir plus »), ton chaleureux et conversationnel, quelques emojis, appel à l'action (commenter, partager, s'abonner à la Page), 1 à 3 hashtags maximum.",
   google: "Fiche Google (Google Business Profile) : texte informatif et local, 2 à 4 phrases, AUCUN hashtag, AUCUN numéro de téléphone (Google refuse les posts qui en contiennent), terminer par un appel à l'action simple (« Découvrez… sur notre site »).",
 };
 
@@ -104,7 +105,7 @@ STUDIO = f"{P}.url_studio.replace(/\\/$/, '')"
 
 n2, c2 = [], {}
 n2.append(note("Note", "## Studio Réseaux — Publier\nNe publie **que** ce que j'ai validé dans le Studio (clic « Publier » ou date programmée arrivée).\n- Le Studio appelle le webhook (Vercel `N8N_PUBLISH_WEBHOOK_URL`) au clic : tout de suite, ou avec `quand` = date programmée → n8n **attend** cette heure (1 seule exécution par post).\n- Filet de sécurité toutes les 2 h (7h-23h) : rattrape un oubli. Peu d'exécutions = quota n8n préservé.\n\n`GET /api/n8n/due` → chaque réseau → `PATCH /api/n8n/targets/:id` (statut + lien).", [-900, -420], 560, 240, 4))
-n2.append(note("Note comptes", "### 🔑 Identifiants à choisir\n- **CRM x-api-key** (Header Auth, `x-api-key` = STUDIO_API_KEY)\n- **YouTube OAuth2 API**\n- **LinkedIn OAuth2 API** (cocher *Organization Support* pour la page)\n- **Facebook Graph API** (jeton de Page longue durée → Instagram)\n- **Google Business Profile OAuth2 API**\n- TikTok : rien ici, le jeton est géré par le Studio.", [-320, -420], 460, 240, 6))
+n2.append(note("Note comptes", "### 🔑 Identifiants à choisir\n- **CRM x-api-key** (Header Auth, `x-api-key` = STUDIO_API_KEY)\n- **YouTube OAuth2 API**\n- **LinkedIn OAuth2 API** (cocher *Organization Support* pour la page)\n- **Facebook Graph API** (jeton de Page longue durée → Instagram et Page Facebook)\n- **Google Business Profile OAuth2 API**\n- TikTok : rien ici, le jeton est géré par le Studio.", [-320, -420], 460, 240, 6))
 
 n2.append(node("Réveil par le Studio (webhook)", "n8n-nodes-base.webhook", 2.2,
     {"httpMethod": "POST", "path": "studio-publier", "authentication": "headerAuth", "responseMode": "onReceived", "options": {}},
@@ -122,6 +123,7 @@ n2.append(node("Mes paramètres", "n8n-nodes-base.set", 3.4, {"mode": "manual", 
     a("p2", "linkedin_personne", "identifiant LinkedIn de ton profil (ex. AbC123xyz) — seulement si LinkedIn"),
     a("p3", "linkedin_page", "identifiant numérique de la page SolveLab (ex. 12345678) — seulement si page"),
     a("p4", "instagram_compte_id", "identifiant du compte Instagram pro (ex. 1784…) — seulement si Instagram"),
+    a("p10", "facebook_page_id", "identifiant de la Page Facebook (ex. 1234567890) — seulement si Facebook"),
     a("p5", "compte_google", "accounts/123 — seulement si fiche Google"),
     a("p6", "etablissement_google", "locations/456 — seulement si fiche Google"),
     a("p7", "site_web", "https://www.solvelab.fr"),
@@ -141,7 +143,7 @@ n2.append(node("Quel réseau ?", "n8n-nodes-base.switch", 3.2, {"rules": {"value
     {"conditions": {"options": {"caseSensitive": True, "leftValue": "", "typeValidation": "strict"},
                     "conditions": [{"leftValue": "={{ $json.network }}", "rightValue": net, "operator": {"type": "string", "operation": "equals"}}],
                     "combinator": "and"}, "renameOutput": True, "outputKey": label}
-    for net, label in [("youtube", "YouTube"), ("linkedin", "LinkedIn"), ("tiktok", "TikTok"), ("instagram", "Instagram"), ("google", "Google")]]},
+    for net, label in [("youtube", "YouTube"), ("linkedin", "LinkedIn"), ("tiktok", "TikTok"), ("instagram", "Instagram"), ("google", "Google"), ("facebook", "Facebook")]]},
     "options": {}}, [220, 30]))
 for x, y in [("Réveil par le Studio (webhook)", "Attendre l'heure prévue"), ("Attendre l'heure prévue", "Mes paramètres"), ("Filet de sécurité (toutes les 2 h)", "Mes paramètres"),
              ("Mes paramètres", "Paramètres remplis ?"), ("Paramètres remplis ?", "Studio : à publier maintenant"),
@@ -336,13 +338,38 @@ n2.append(result("Résultat Google",
 connect(c2, "Quel réseau ?", "Google : publier", 4)
 connect(c2, "Google : publier", "Résultat Google")
 
+# ---------------- Page Facebook ----------------
+n2.append(node("Facebook : vidéo ?", "n8n-nodes-base.if", 2.2, {"conditions": {
+    "options": {"caseSensitive": True, "leftValue": "", "typeValidation": "loose"},
+    "conditions": [{"leftValue": "={{ $json.send_media && $json.media_type === 'video' }}", "rightValue": "", "operator": {"type": "boolean", "operation": "true", "singleValue": True}}],
+    "combinator": "and"}, "options": {}}, [480, 640]))
+n2.append(node("Facebook : publier la vidéo", "n8n-nodes-base.facebookGraphApi", 1.1, {
+    "hostUrl": "graph-video.facebook.com", "httpRequestMethod": "POST", "graphApiVersion": "v21.0",
+    "node": f"={{{{ {P}.facebook_page_id }}}}", "edge": "videos",
+    "options": {"queryParametersJson": "={{ JSON.stringify({ file_url: $json.media_url, description: $json.text }) }}"}},
+    [720, 580], onError="continueRegularOutput", credentials=FB))
+n2.append(node("Facebook : publier (texte ou photo)", "n8n-nodes-base.facebookGraphApi", 1.1, {
+    "hostUrl": "graph.facebook.com", "httpRequestMethod": "POST", "graphApiVersion": "v21.0",
+    "node": f"={{{{ {P}.facebook_page_id }}}}",
+    "edge": "={{ $json.send_media && $json.media_type === 'image' ? 'photos' : 'feed' }}",
+    "options": {"queryParametersJson": "={{ JSON.stringify($json.send_media && $json.media_type === 'image' ? { url: $json.media_url, caption: $json.text } : { message: $json.text }) }}"}},
+    [720, 700], onError="continueRegularOutput", credentials=FB))
+n2.append(result("Résultat Facebook",
+    "const e = err(j);\nconst id = j.post_id || j.id;\nif (e || !id) return { json: { target_id: t.target_id, status: 'erreur', error: 'Facebook : ' + (e || 'publication refusée') } };\nreturn { json: { target_id: t.target_id, status: 'publie', external_id: String(id), url: 'https://www.facebook.com/' + id } };",
+    [960, 640]))
+connect(c2, "Quel réseau ?", "Facebook : vidéo ?", 5)
+connect(c2, "Facebook : vidéo ?", "Facebook : publier la vidéo", 0)
+connect(c2, "Facebook : vidéo ?", "Facebook : publier (texte ou photo)", 1)
+connect(c2, "Facebook : publier la vidéo", "Résultat Facebook")
+connect(c2, "Facebook : publier (texte ou photo)", "Résultat Facebook")
+
 # ---------------- Retour au Studio ----------------
 n2.append(node("Studio : noter le résultat", "n8n-nodes-base.httpRequest", 4.2, {
     "method": "PATCH", "url": f"={{{{ {STUDIO} }}}}/api/n8n/targets/{{{{ $json.target_id }}}}",
     "authentication": "genericCredentialType", "genericAuthType": "httpHeaderAuth",
     "sendBody": True, "specifyBody": "json", "jsonBody": "={{ JSON.stringify($json) }}", "options": {}},
     [2700, 60], credentials=HEADER, retryOnFail=True, maxTries=3, waitBetweenTries=5000))
-for r in ["Résultat YouTube", "Résultat LinkedIn", "Résultat TikTok", "Résultat Instagram", "Résultat Google"]:
+for r in ["Résultat YouTube", "Résultat LinkedIn", "Résultat TikTok", "Résultat Instagram", "Résultat Google", "Résultat Facebook"]:
     connect(c2, r, "Studio : noter le résultat")
 
 wf2 = {"name": "Studio Réseaux — Publier", "nodes": n2, "connections": c2,

@@ -97,6 +97,20 @@ export function NetworkPreview({ network, text, title, mediaUrl, mediaType, show
     );
   }
 
+  if (network === "facebook") {
+    return (
+      <div className="overflow-hidden rounded-lg bg-white text-[#050505]">
+        <div className="flex items-center gap-2 p-3">
+          <Avatar />
+          <div><div className="text-sm font-semibold">{name}</div><div className="text-[11px] text-[#65676b]">à l&apos;instant · 🌐</div></div>
+        </div>
+        <div className="px-3 pb-3 text-sm"><Folded text={text} at={250} more="Voir plus" /></div>
+        {media && <Media url={media} type={mediaType} className="max-h-80 w-full" />}
+        <div className="flex justify-around border-t border-[#e4e6eb] py-2 text-xs text-[#65676b]"><span>👍 J&apos;aime</span><span>💬 Commenter</span><span>↗ Partager</span></div>
+      </div>
+    );
+  }
+
   // fiche Google
   return (
     <div className="overflow-hidden rounded-lg bg-white text-[#202124]">

@@ -1,4 +1,4 @@
-export const NETWORKS = ["youtube", "linkedin", "tiktok", "instagram", "google"] as const;
+export const NETWORKS = ["youtube", "linkedin", "tiktok", "instagram", "facebook", "google"] as const;
 export type Network = (typeof NETWORKS)[number];
 export type MediaType = "image" | "video" | null;
 
@@ -69,6 +69,18 @@ export const NETWORK_INFO: Record<Network, NetworkInfo> = {
       "developers.facebook.com : créer une app Meta (type Entreprise), produit « Instagram Graph API ».",
       "Générer un jeton de Page longue durée (instagram_basic, instagram_content_publish, pages_show_list).",
       "Dans n8n : identifiant « Facebook Graph API » avec ce jeton + l'identifiant du compte Instagram dans « Mes paramètres ».",
+    ],
+  },
+  facebook: {
+    id: "facebook", label: "Facebook", short: "f", color: "bg-blue-500/15 text-blue-700 dark:text-blue-300",
+    max: 5000,
+    accepts: { text: true, image: true, video: true },
+    limit: "Publie sur ta Page Facebook (pas sur ton profil perso) : texte seul, photo ou vidéo. Il faut une Page Facebook et une app Meta (mode développement suffit pour ta propre Page).",
+    setup: [
+      "Créer la Page Facebook (ex. Verdana) avec ton compte Facebook.",
+      "developers.facebook.com : créer une app Meta (type Entreprise), ajouter les autorisations pages_manage_posts, pages_read_engagement, pages_show_list.",
+      "Générer un jeton de Page longue durée (le même peut servir pour Instagram).",
+      "Dans n8n : identifiant « Facebook Graph API » avec ce jeton + l'identifiant de la Page dans « Mes paramètres » (facebook_page_id).",
     ],
   },
   google: {
