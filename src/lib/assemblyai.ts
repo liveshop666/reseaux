@@ -10,6 +10,9 @@ import { TOOLS, runTool, systemPrompt } from "@/lib/assistant";
  */
 
 export const AAI_MODEL = process.env.ASSEMBLYAI_MODEL || "claude-sonnet-5-5";
+/** Ordre d'essai (sans préfixe de fabricant). ASSEMBLYAI_MODEL passe en premier. */
+const AAI_MODELS = [...new Set([AAI_MODEL, "claude-sonnet-5-5", "claude-haiku-5-5", "gemini-3.8-flash", "gemini-2.5-flash", "gpt-5-mini", "gemini-2.5-flash-lite", "gpt-5-nano"])];
+let workingModel: string | null = null;
 const URL = process.env.ASSEMBLYAI_LLM_URL || "https://llm-gateway.assemblyai.com/v1/chat/completions";
 const MAX_TURNS = 8;
 
@@ -74,26 +77,35 @@ async function callOnce(messages: ChatMessage[], noTools: boolean): Promise<{ bl
     copy[i] = { role: "user", content: `# Consignes\n${sys.content}\n\n# Message\n${(copy[i] as { content: string }).content}` };
     return copy;
   })();
-  const variants = [
-    { model: AAI_MODEL, messages, max_tokens: 8000, tools: TOOL_DEFS, tool_choice: noTools ? "none" : "auto" },
-    { model: AAI_MODEL, messages, max_tokens: 8000, ...(noTools ? {} : { tools: TOOL_DEFS }) },
-    { model: AAI_MODEL, messages: merged, max_tokens: 8000, ...(noTools ? {} : { tools: TOOL_DEFS }) },
-  ];
+  // Modèles essayés dans l'ordre : si le compte n'a pas accès à l'un (offre gratuite), on passe au suivant.
+  // Le premier qui marche est retenu pour les appels suivants.
+  const models = workingModel ? [workingModel] : AAI_MODELS;
   let res: Response | undefined;
-  outer: for (const body of variants) {
-    for (let attempt = 0; attempt < 3; attempt++) {
-      if (attempt > 0) await new Promise((r) => setTimeout(r, 1500 * attempt));
-      res = await fetch(URL, {
-        method: "POST",
-        headers: { "content-type": "application/json", authorization: process.env.ASSEMBLYAI_API_KEY!.trim() },
-        body: JSON.stringify(body),
-      });
-      if (res.status === 400) continue outer; // format refusé : variante suivante
-      if (![500, 502, 503, 504].includes(res.status)) break outer;
+  let raw = "";
+  modelLoop: for (const model of models) {
+    const variants = [
+      { model, messages, max_tokens: 8000, tools: TOOL_DEFS, tool_choice: noTools ? "none" : "auto" },
+      { model, messages, max_tokens: 8000, ...(noTools ? {} : { tools: TOOL_DEFS }) },
+      { model, messages: merged, max_tokens: 8000, ...(noTools ? {} : { tools: TOOL_DEFS }) },
+    ];
+    variantLoop: for (const body of variants) {
+      for (let attempt = 0; attempt < 3; attempt++) {
+        if (attempt > 0) await new Promise((r) => setTimeout(r, 1500 * attempt));
+        res = await fetch(URL, {
+          method: "POST",
+          headers: { "content-type": "application/json", authorization: process.env.ASSEMBLYAI_API_KEY!.trim() },
+          body: JSON.stringify(body),
+        });
+        raw = await res.text();
+        if (res.ok) { workingModel = model; break modelLoop; }
+        if (res.status === 400 && /does not have access|not available|unknown model|model not found/i.test(raw)) continue modelLoop;
+        if (res.status === 404) continue modelLoop;
+        if (res.status === 400) continue variantLoop; // format refusé : variante suivante
+        if (![500, 502, 503, 504].includes(res.status)) break modelLoop;
+      }
     }
   }
   res = res!;
-  const raw = await res.text();
   let data: Record<string, unknown> = {};
   try { data = JSON.parse(raw); } catch { /* texte brut */ }
   if (!res.ok) {
