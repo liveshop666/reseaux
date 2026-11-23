@@ -100,17 +100,25 @@ async function streamOnce(contents: GeminiContent[], send: Send, noTools: boolea
     toolConfig: { functionCallingConfig: { mode: noTools ? "NONE" : "AUTO" } },
     generationConfig: { maxOutputTokens: 8192 },
   };
-  const res = await fetch(`${API}/${GEMINI_MODEL}:streamGenerateContent?alt=sse`, {
-    method: "POST",
-    headers: { "content-type": "application/json", "x-goog-api-key": key },
-    body: JSON.stringify(body),
-  });
+  // Gemini renvoie parfois 503 / 500 (« modèle surchargé ») : on réessaie tout seul, 3 fois max
+  let res: Response | undefined;
+  for (let attempt = 0; attempt < 4; attempt++) {
+    if (attempt > 0) await new Promise((r) => setTimeout(r, 1500 * attempt));
+    res = await fetch(`${API}/${GEMINI_MODEL}:streamGenerateContent?alt=sse`, {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-goog-api-key": key },
+      body: JSON.stringify(body),
+    });
+    if (res.status !== 503 && res.status !== 500) break;
+  }
+  res = res!;
   if (!res.ok || !res.body) {
     const t = await res.text().catch(() => "");
     let m = t.slice(0, 300);
     try { m = JSON.parse(t).error?.message ?? m; } catch { /* texte brut */ }
     throw new Error(res.status === 400 && /API key/i.test(m) ? "Clé Gemini invalide : vérifie GEMINI_API_KEY dans Vercel."
       : res.status === 429 ? "Gemini : trop de demandes (quota gratuit), réessaie dans une minute."
+      : res.status === 503 || res.status === 500 ? "Gemini est surchargé chez Google en ce moment (rien à voir avec ton Studio). Réessaie dans une minute."
       : `Erreur Gemini (${res.status}) : ${m}`);
   }
 
