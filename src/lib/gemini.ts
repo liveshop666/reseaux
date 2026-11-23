@@ -9,6 +9,8 @@ import { TOOLS, runTool, systemPrompt } from "@/lib/assistant";
  */
 
 export const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-flash-latest";
+/** Modèles essayés ensuite si le premier est saturé (Google renvoie souvent 503 sur le modèle le plus demandé). */
+const GEMINI_FALLBACKS = ["gemini-2.5-flash", "gemini-flash-lite-latest", "gemini-2.5-flash-lite"];
 const API = "https://generativelanguage.googleapis.com/v1beta/models";
 const MAX_TURNS = 8;
 
@@ -101,15 +103,21 @@ async function streamOnce(contents: GeminiContent[], send: Send, noTools: boolea
     generationConfig: { maxOutputTokens: 8192 },
   };
   // Gemini renvoie parfois 503 / 500 (« modèle surchargé ») : on réessaie tout seul, 3 fois max
+  // Plan B : si un modèle est saturé (503/500), au quota (429) ou inconnu (404), on passe au suivant
+  const models = [...new Set([GEMINI_MODEL, ...GEMINI_FALLBACKS])];
   let res: Response | undefined;
-  for (let attempt = 0; attempt < 4; attempt++) {
-    if (attempt > 0) await new Promise((r) => setTimeout(r, 1500 * attempt));
-    res = await fetch(`${API}/${GEMINI_MODEL}:streamGenerateContent?alt=sse`, {
-      method: "POST",
-      headers: { "content-type": "application/json", "x-goog-api-key": key },
-      body: JSON.stringify(body),
-    });
-    if (res.status !== 503 && res.status !== 500) break;
+  outer: for (const model of models) {
+    for (let attempt = 0; attempt < 2; attempt++) {
+      if (attempt > 0) await new Promise((r) => setTimeout(r, 1500));
+      res = await fetch(`${API}/${model}:streamGenerateContent?alt=sse`, {
+        method: "POST",
+        headers: { "content-type": "application/json", "x-goog-api-key": key },
+        body: JSON.stringify(body),
+      });
+      if (res.ok) break outer;
+      if (res.status === 404 || res.status === 429) break; // modèle suivant tout de suite
+      if (res.status !== 503 && res.status !== 500) break outer; // vraie erreur (clé, requête…) : on s'arrête
+    }
   }
   res = res!;
   if (!res.ok || !res.body) {
