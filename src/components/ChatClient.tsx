@@ -19,7 +19,7 @@ const LINK_RE = /^(Photo|Vidéo) jointe « (.*?) » : (https?:\/\/\S+)$/gm;
 
 const SUGGESTIONS = [
   "Écris un post LinkedIn sur notre dernier site livré",
-  "Voici des photos : fais-en une vidéo verticale pour TikTok et Instagram",
+  "Voici des photos : fais-en une vidéo verticale pour TikTok",
   "Qu'est-ce qui a été publié cette semaine ?",
 ];
 
