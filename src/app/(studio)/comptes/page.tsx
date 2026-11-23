@@ -80,7 +80,7 @@ export default async function Comptes({ searchParams }: { searchParams: Promise<
               {pending ? (
                 <p className="mt-3 rounded-lg border border-border bg-soft p-3 text-sm">
                   🛠️ {info.label} est prêt dans le Studio et dans n8n, mais pas encore activé dans la base de données
-                  (mise à jour <code>{n === "facebook" ? "0003_facebook.sql" : "à faire"}</code>, à lancer quand tu le décides). En attendant, rien ne part sur {info.label}.
+                  (mise à jour <code>à faire</code>, à lancer quand tu le décides). En attendant, rien ne part sur {info.label}.
                 </p>
               ) : (
               <form action={updateAccount} className="mt-3 space-y-2">
