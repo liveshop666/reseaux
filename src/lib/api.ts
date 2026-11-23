@@ -9,7 +9,7 @@ import { errorMessage } from "@/lib/format";
  * réutiliser l'identifiant n8n « CRM x-api-key ».
  */
 export function checkApiKey(req: NextRequest): NextResponse | null {
-  const expected = process.env.STUDIO_API_KEY;
+  const expected = process.env.STUDIO_API_KEY?.trim(); // les espaces / retours à la ligne collés par erreur ne comptent pas
   if (!expected) return NextResponse.json({ error: "STUDIO_API_KEY non configurée" }, { status: 500 });
   const given = req.headers.get("x-api-key") ?? req.headers.get("authorization")?.replace(/^Bearer\s+/i, "") ?? "";
   const a = Buffer.from(given), b = Buffer.from(expected);
