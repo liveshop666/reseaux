@@ -87,7 +87,7 @@ export default async function Comptes({ searchParams }: { searchParams: Promise<
                 <input type="hidden" name="network" value={n} />
                 <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="enabled" defaultChecked={a.enabled} /> Branché dans n8n (coché par défaut dans « Nouveau post »)</label>
                 <div className="grid gap-2 sm:grid-cols-2">
-                  <label className="block"><span className="label">Nom affiché dans l&apos;aperçu</span><input name="handle" defaultValue={a.handle ?? ""} className="input" placeholder={n === "instagram" || n === "tiktok" ? "solvelab" : "SolveLab"} /></label>
+                  <label className="block"><span className="label">Nom affiché dans l&apos;aperçu</span><input name="handle" defaultValue={a.handle ?? ""} className="input" placeholder={n === "tiktok" ? "solvelab" : "SolveLab"} /></label>
                   <label className="block"><span className="label">Lien du profil</span><input name="profile_url" defaultValue={a.profile_url ?? ""} className="input" placeholder="https://…" /></label>
                 </div>
                 {n === "linkedin" && (

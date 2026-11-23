@@ -1,4 +1,4 @@
-export const NETWORKS = ["youtube", "linkedin", "tiktok", "instagram", "google"] as const;
+export const NETWORKS = ["youtube", "linkedin", "tiktok", "google"] as const;
 export type Network = (typeof NETWORKS)[number];
 export type MediaType = "image" | "video" | null;
 
@@ -57,18 +57,6 @@ export const NETWORK_INFO: Record<Network, NetworkInfo> = {
       "Adresse de redirection : <adresse du Studio>/api/oauth/tiktok/callback.",
       "Copier Client key et Client secret dans Vercel (TIKTOK_CLIENT_KEY, TIKTOK_CLIENT_SECRET), puis bouton « Connecter TikTok » ci-dessous.",
       "Demander l'audit de l'app pour publier en public.",
-    ],
-  },
-  instagram: {
-    id: "instagram", label: "Instagram", short: "IG", color: "bg-pink-500/15 text-pink-700 dark:text-pink-300",
-    max: 2200,
-    accepts: { text: false, image: true, video: true }, needs: "media",
-    limit: "Photo ou vidéo obligatoire. Il faut un compte Instagram professionnel relié à la page Facebook SolveLab, et une app Meta (mode développement suffit pour ton propre compte).",
-    setup: [
-      "Passer le compte Instagram en « professionnel » et le relier à la page Facebook SolveLab.",
-      "developers.facebook.com : créer une app Meta (type Entreprise), produit « Instagram Graph API ».",
-      "Générer un jeton de Page longue durée (instagram_basic, instagram_content_publish, pages_show_list).",
-      "Dans n8n : identifiant « Facebook Graph API » avec ce jeton + l'identifiant du compte Instagram dans « Mes paramètres ».",
     ],
   },
   google: {
