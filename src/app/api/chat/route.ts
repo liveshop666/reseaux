@@ -4,6 +4,7 @@ import { z } from "zod";
 import { MODEL, TOOLS, runTool, systemPrompt } from "@/lib/assistant";
 import { requireUser } from "@/lib/auth";
 import { errorMessage } from "@/lib/format";
+import { runGemini } from "@/lib/gemini";
 import { mediaPathFromUrl } from "@/lib/post-core";
 
 export const maxDuration = 300;
@@ -24,8 +25,9 @@ const MAX_TURNS = 8;
 export async function POST(req: NextRequest) {
   let supabase;
   try { supabase = await requireUser(); } catch { return NextResponse.json({ error: "Reconnecte-toi." }, { status: 401 }); }
-  if (!process.env.ANTHROPIC_API_KEY) {
-    return NextResponse.json({ error: "ANTHROPIC_API_KEY n'est pas configurée dans Vercel (clé Claude, console.anthropic.com)." }, { status: 500 });
+  const useGemini = !!process.env.GEMINI_API_KEY;
+  if (!useGemini && !process.env.ANTHROPIC_API_KEY) {
+    return NextResponse.json({ error: "Aucune clé d'IA dans Vercel : ajoute GEMINI_API_KEY (Google AI Studio) ou ANTHROPIC_API_KEY (Claude)." }, { status: 500 });
   }
   const parsed = Body.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "Message invalide." }, { status: 400 });
@@ -49,10 +51,35 @@ export async function POST(req: NextRequest) {
   const { data: rows, error: hErr } = await supabase.from("social_messages")
     .select("role, content").eq("conversation_id", conversationId).order("created_at").order("id");
   if (hErr) return NextResponse.json({ error: errorMessage(hErr) }, { status: 500 });
-  const messages: Anthropic.Beta.BetaMessageParam[] = (rows ?? []).map((r) => ({ role: r.role, content: r.content }));
+  const enc = new TextEncoder();
+  const headers = { "content-type": "application/x-ndjson; charset=utf-8", "cache-control": "no-store", "x-accel-buffering": "no" };
+
+  if (useGemini) {
+    const gStream = new ReadableStream({
+      async start(controller) {
+        const send = (o: Record<string, unknown>) => { try { controller.enqueue(enc.encode(JSON.stringify(o) + "\n")); } catch { /* client parti */ } };
+        try {
+          await runGemini({ supabase, conversationId, lastUserAt, rows: rows ?? [] }, send);
+        } catch (e) {
+          send({ t: "error", m: errorMessage(e) });
+        } finally {
+          send({ t: "done" });
+          controller.close();
+        }
+      },
+    });
+    return new Response(gStream, { headers });
+  }
+
+  // Claude : on retire les champs propres à Gemini (au cas où la conversation a commencé avec Gemini)
+  const messages: Anthropic.Beta.BetaMessageParam[] = (rows ?? []).map((r) => ({
+    role: r.role,
+    content: Array.isArray(r.content)
+      ? r.content.map((b: Record<string, unknown>) => { const { gemini_signature: _sig, ...rest } = b; void _sig; return rest; })
+      : r.content,
+  }));
 
   const client = new Anthropic();
-  const enc = new TextEncoder();
 
   const stream = new ReadableStream({
     async start(controller) {
@@ -124,5 +151,5 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  return new Response(stream, { headers: { "content-type": "application/x-ndjson; charset=utf-8", "cache-control": "no-store", "x-accel-buffering": "no" } });
+  return new Response(stream, { headers });
 }
