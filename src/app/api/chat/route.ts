@@ -65,8 +65,13 @@ export async function POST(req: NextRequest) {
             betas: ["server-side-fallback-2026-07-01"],
             fallbacks: "default",
             thinking: { type: "adaptive" },
-            output_config: { effort: "medium" },
-            system: [{ type: "text", text: systemPrompt() + `\n\nNous sommes le ${new Date().toLocaleString("fr-FR", { timeZone: "Europe/Paris", dateStyle: "full", timeStyle: "short" })} (Paris).`, cache_control: { type: "ephemeral" } }],
+            // « low » : réponses de chat rapides (moins de réflexion avant d'écrire)
+            output_config: { effort: "low" },
+            // le prompt fixe est mis en cache ; la date (qui change chaque minute) vient APRÈS, sinon le cache ne sert jamais
+            system: [
+              { type: "text", text: systemPrompt(), cache_control: { type: "ephemeral" } },
+              { type: "text", text: `Nous sommes le ${new Date().toLocaleString("fr-FR", { timeZone: "Europe/Paris", dateStyle: "full", timeStyle: "short" })} (Paris).` },
+            ],
             tools: TOOLS as unknown as Anthropic.Beta.BetaToolUnion[],
             messages,
           });
