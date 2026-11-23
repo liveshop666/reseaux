@@ -11,7 +11,7 @@ import { TOOLS, runTool, systemPrompt } from "@/lib/assistant";
 
 export const AAI_MODEL = process.env.ASSEMBLYAI_MODEL || "claude-sonnet-5-5";
 /** Ordre d'essai (sans préfixe de fabricant). ASSEMBLYAI_MODEL passe en premier. */
-const AAI_MODELS = [...new Set([AAI_MODEL, "claude-sonnet-5-5", "claude-haiku-5-5", "gemini-3.8-flash", "gemini-2.5-flash", "gpt-5-mini", "gemini-2.5-flash-lite", "gpt-5-nano"])];
+const AAI_MODELS = [...new Set([AAI_MODEL, "claude-sonnet-5-5", "claude-haiku-5-5", "gemini-3.8-flash", "gemini-2.5-flash", "gpt-5-mini", "gemini-2.5-flash-lite", "gpt-5-nano", "deepseek-v4.1-flash", "gpt-oss-120b", "qwen3-next-80b-a3b", "kimi-k3", "glm-5.3-flash", "gemma-4-31b", "gpt-oss-20b", "nemotron-3-super-120b-a12b"])];
 let workingModel: string | null = null;
 const URL = process.env.ASSEMBLYAI_LLM_URL || "https://llm-gateway.assemblyai.com/v1/chat/completions";
 const MAX_TURNS = 8;
