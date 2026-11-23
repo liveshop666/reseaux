@@ -64,22 +64,33 @@ function parseArgs(s: string): Record<string, unknown> {
 
 /** Un appel à la passerelle (sans flux : la réponse arrive d'un coup). */
 async function callOnce(messages: ChatMessage[], noTools: boolean): Promise<{ blocks: Block[]; finish: string }> {
-  const body = {
-    model: AAI_MODEL,
-    messages,
-    max_tokens: 8000,
-    tools: TOOL_DEFS,
-    tool_choice: noTools ? "none" : "auto",
-  };
+  // Variantes de plus en plus simples si la passerelle refuse le format (400) :
+  // 1) complète  2) sans tool_choice  3) consignes « système » mises dans le 1er message utilisateur
+  const merged: ChatMessage[] = (() => {
+    const [sys, ...rest] = messages;
+    const i = rest.findIndex((m) => m.role === "user");
+    if (sys?.role !== "system" || i < 0) return messages;
+    const copy = [...rest];
+    copy[i] = { role: "user", content: `# Consignes\n${sys.content}\n\n# Message\n${(copy[i] as { content: string }).content}` };
+    return copy;
+  })();
+  const variants = [
+    { model: AAI_MODEL, messages, max_tokens: 8000, tools: TOOL_DEFS, tool_choice: noTools ? "none" : "auto" },
+    { model: AAI_MODEL, messages, max_tokens: 8000, ...(noTools ? {} : { tools: TOOL_DEFS }) },
+    { model: AAI_MODEL, messages: merged, max_tokens: 8000, ...(noTools ? {} : { tools: TOOL_DEFS }) },
+  ];
   let res: Response | undefined;
-  for (let attempt = 0; attempt < 3; attempt++) {
-    if (attempt > 0) await new Promise((r) => setTimeout(r, 1500 * attempt));
-    res = await fetch(URL, {
-      method: "POST",
-      headers: { "content-type": "application/json", authorization: process.env.ASSEMBLYAI_API_KEY!.trim() },
-      body: JSON.stringify(body),
-    });
-    if (![500, 502, 503, 504].includes(res.status)) break;
+  outer: for (const body of variants) {
+    for (let attempt = 0; attempt < 3; attempt++) {
+      if (attempt > 0) await new Promise((r) => setTimeout(r, 1500 * attempt));
+      res = await fetch(URL, {
+        method: "POST",
+        headers: { "content-type": "application/json", authorization: process.env.ASSEMBLYAI_API_KEY!.trim() },
+        body: JSON.stringify(body),
+      });
+      if (res.status === 400) continue outer; // format refusé : variante suivante
+      if (![500, 502, 503, 504].includes(res.status)) break outer;
+    }
   }
   res = res!;
   const raw = await res.text();
