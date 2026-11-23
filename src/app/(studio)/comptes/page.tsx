@@ -22,8 +22,8 @@ export default async function Comptes({ searchParams }: { searchParams: Promise<
   if (isMissingTable(error)) return <SetupNotice title="Comptes connectés" />;
   const accounts = (data ?? []) as Account[];
   const tiktok = await tiktokStatus();
-  const n8nReady = { ia: !!process.env.GEMINI_API_KEY || !!process.env.ANTHROPIC_API_KEY, publish: !!process.env.N8N_PUBLISH_WEBHOOK_URL };
-  const iaName = process.env.GEMINI_API_KEY ? "Gemini" : "Claude";
+  const n8nReady = { ia: !!process.env.ASSEMBLYAI_API_KEY || !!process.env.GEMINI_API_KEY || !!process.env.ANTHROPIC_API_KEY, publish: !!process.env.N8N_PUBLISH_WEBHOOK_URL };
+  const iaName = process.env.ASSEMBLYAI_API_KEY ? `AssemblyAI · ${process.env.ASSEMBLYAI_MODEL || "claude-sonnet-5-5"}` : process.env.GEMINI_API_KEY ? "Gemini" : "Claude";
 
   return (
     <div className="mx-auto max-w-5xl">
@@ -35,7 +35,7 @@ export default async function Comptes({ searchParams }: { searchParams: Promise<
       <section className="card mb-6 p-4 text-sm">
         <h2 className="mb-2 font-head text-xl font-extrabold uppercase">Moteur</h2>
         <ul className="space-y-1">
-          <li>{n8nReady.ia ? "✅" : "❌"} Assistant ({iaName}) — <code>GEMINI_API_KEY</code> ou <code>ANTHROPIC_API_KEY</code>{!n8nReady.ia && " : sans l'une des deux, la conversation ne répond pas"}</li>
+          <li>{n8nReady.ia ? "✅" : "❌"} Assistant ({iaName}) — <code>ASSEMBLYAI_API_KEY</code>, <code>GEMINI_API_KEY</code> ou <code>ANTHROPIC_API_KEY</code>{!n8nReady.ia && " : sans l'une d'elles, la conversation ne répond pas"}</li>
           <li>{n8nReady.publish ? "✅" : "⚪"} Publication (au clic et à l&apos;heure programmée) — <code>N8N_PUBLISH_WEBHOOK_URL</code>{!n8nReady.publish && " : sans elle, n8n ne passe que toutes les 2 h"}</li>
         </ul>
       </section>

@@ -4,6 +4,7 @@ import { z } from "zod";
 import { MODEL, TOOLS, runTool, systemPrompt } from "@/lib/assistant";
 import { requireUser } from "@/lib/auth";
 import { errorMessage } from "@/lib/format";
+import { runAssemblyAI } from "@/lib/assemblyai";
 import { runGemini } from "@/lib/gemini";
 import { mediaPathFromUrl } from "@/lib/post-core";
 
@@ -25,9 +26,11 @@ const MAX_TURNS = 8;
 export async function POST(req: NextRequest) {
   let supabase;
   try { supabase = await requireUser(); } catch { return NextResponse.json({ error: "Reconnecte-toi." }, { status: 401 }); }
-  const useGemini = !!process.env.GEMINI_API_KEY;
-  if (!useGemini && !process.env.ANTHROPIC_API_KEY) {
-    return NextResponse.json({ error: "Aucune clé d'IA dans Vercel : ajoute GEMINI_API_KEY (Google AI Studio) ou ANTHROPIC_API_KEY (Claude)." }, { status: 500 });
+  // Priorité : AssemblyAI (passerelle, Claude Sonnet 5.5) > Gemini > Claude en direct
+  const useAai = !!process.env.ASSEMBLYAI_API_KEY;
+  const useGemini = !useAai && !!process.env.GEMINI_API_KEY;
+  if (!useAai && !useGemini && !process.env.ANTHROPIC_API_KEY) {
+    return NextResponse.json({ error: "Aucune clé d'IA dans Vercel : ajoute ASSEMBLYAI_API_KEY, GEMINI_API_KEY ou ANTHROPIC_API_KEY." }, { status: 500 });
   }
   const parsed = Body.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "Message invalide." }, { status: 400 });
@@ -54,12 +57,14 @@ export async function POST(req: NextRequest) {
   const enc = new TextEncoder();
   const headers = { "content-type": "application/x-ndjson; charset=utf-8", "cache-control": "no-store", "x-accel-buffering": "no" };
 
-  if (useGemini) {
+  if (useAai || useGemini) {
     const gStream = new ReadableStream({
       async start(controller) {
         const send = (o: Record<string, unknown>) => { try { controller.enqueue(enc.encode(JSON.stringify(o) + "\n")); } catch { /* client parti */ } };
         try {
-          await runGemini({ supabase, conversationId, lastUserAt, rows: rows ?? [] }, send);
+          const ctx = { supabase, conversationId, lastUserAt, rows: rows ?? [] };
+          if (useAai) await runAssemblyAI(ctx, send);
+          else await runGemini(ctx, send);
         } catch (e) {
           send({ t: "error", m: errorMessage(e) });
         } finally {
