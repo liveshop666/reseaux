@@ -86,7 +86,9 @@ async function callOnce(messages: ChatMessage[], noTools: boolean): Promise<{ bl
   let data: Record<string, unknown> = {};
   try { data = JSON.parse(raw); } catch { /* texte brut */ }
   if (!res.ok) {
-    const m = String((data.message as string) ?? (data.error as string) ?? raw.slice(0, 300));
+    const details = (data.metadata as { errors?: unknown[] } | undefined)?.errors;
+    const m = String((data.message as string) ?? (data.error as string) ?? raw.slice(0, 300))
+      + (Array.isArray(details) && details.length ? ` — ${details.map(String).join(" ; ").slice(0, 400)}` : "");
     throw new Error(res.status === 401 || res.status === 403 ? "Clé AssemblyAI invalide : vérifie ASSEMBLYAI_API_KEY dans Vercel."
       : res.status === 429 ? "AssemblyAI : trop de demandes en une minute, réessaie dans un instant."
       : /credit|balance|insufficient/i.test(m) ? "AssemblyAI : plus de crédits sur le compte."
