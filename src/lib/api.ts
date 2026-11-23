@@ -11,7 +11,7 @@ import { errorMessage } from "@/lib/format";
 export function checkApiKey(req: NextRequest): NextResponse | null {
   const expected = process.env.STUDIO_API_KEY?.trim(); // les espaces / retours à la ligne collés par erreur ne comptent pas
   if (!expected) return NextResponse.json({ error: "STUDIO_API_KEY non configurée" }, { status: 500 });
-  const given = req.headers.get("x-api-key") ?? req.headers.get("authorization")?.replace(/^Bearer\s+/i, "") ?? "";
+  const given = (req.headers.get("x-api-key") ?? req.headers.get("authorization")?.replace(/^Bearer\s+/i, "") ?? "").trim();
   const a = Buffer.from(given), b = Buffer.from(expected);
   if (a.length !== b.length || !timingSafeEqual(a, b)) {
     return NextResponse.json({ error: "Clé API invalide" }, { status: 401 });
