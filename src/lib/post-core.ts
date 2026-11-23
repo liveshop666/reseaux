@@ -35,6 +35,19 @@ export async function wakeN8n(postId: string, quand?: string): Promise<string | 
     : "Webhook de publication non configuré (N8N_PUBLISH_WEBHOOK_URL) : la publication partira au prochain passage de sécurité de n8n (2 h max).";
 }
 
+/** Réseaux présents dans le code mais pas encore activés dans la base (pas de ligne dans social_accounts). */
+export async function notReadyNetworks(supabase: SupabaseClient, nets: Network[]): Promise<Network[]> {
+  if (nets.length === 0) return [];
+  const { data, error } = await supabase.from("social_accounts").select("network").in("network", nets);
+  if (error) throw error;
+  const have = new Set((data ?? []).map((r: { network: string }) => r.network));
+  return nets.filter((n) => !have.has(n));
+}
+
+export function notReadyMessage(nets: Network[]): string {
+  return `${nets.map((n) => NETWORK_INFO[n].label).join(", ")} : pas encore activé dans la base de données (mise à jour à lancer quand Rudy le décide). Propose sans ce réseau.`;
+}
+
 /** Crée le post et une ligne `a_publier` par réseau. C'est le SEUL chemin qui déclenche une publication. */
 export async function createPostCore(supabase: SupabaseClient, input: PostInput): Promise<PostResult> {
   try {
@@ -61,6 +74,8 @@ export async function createPostCore(supabase: SupabaseClient, input: PostInput)
       targets.push({ network: t.network, title: title || null, text: text || title });
     }
     if (targets.length === 0) return { ok: false, error: "Aucun réseau choisi." };
+    const missing = await notReadyNetworks(supabase, targets.map((t) => t.network));
+    if (missing.length) return { ok: false, error: notReadyMessage(missing) };
 
     const now = new Date();
     let when = now;

@@ -3,7 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { errorMessage } from "@/lib/format";
 import { NETWORKS, NETWORK_INFO, blockReason, type MediaType, type Network } from "@/lib/networks";
-import { BUCKET, createPostCore, mediaPathFromUrl } from "@/lib/post-core";
+import { BUCKET, createPostCore, mediaPathFromUrl, notReadyMessage, notReadyNetworks } from "@/lib/post-core";
 
 export const MODEL = "claude-opus-5-5";
 
@@ -188,6 +188,8 @@ export async function runTool(name: string, input: unknown, ctx: ToolContext): P
           if (r.texte.length > info.max) problems.push(`${info.label} : ${r.texte.length} caractères, maximum ${info.max}.`);
           if (r.reseau === "youtube" && (!r.titre.trim() || r.titre.length > (info.titleMax ?? 100))) problems.push("YouTube : titre manquant ou trop long.");
         }
+        const missing = await notReadyNetworks(ctx.supabase, p.data.reseaux.map((r) => r.reseau));
+        if (missing.length) problems.push(notReadyMessage(missing));
         if (problems.length) return fail("Brouillon refusé, corrige : " + problems.join(" "));
         const payload: DraftPayload = { texte_base: p.data.texte_base, media_url: p.data.media_url || null, media_type: mediaType, reseaux: p.data.reseaux };
         const { data, error } = await ctx.supabase.from("social_drafts").insert({ conversation_id: ctx.conversationId, payload }).select("id").single();

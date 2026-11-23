@@ -42,9 +42,12 @@ export default async function Comptes({ searchParams }: { searchParams: Promise<
       <div className="grid gap-4 md:grid-cols-2">
         {NETWORKS.map((n) => {
           const info = NETWORK_INFO[n];
-          const a = accounts.find((x) => x.network === n);
-          if (!a) return null;
-          const state = a.last_error ? { t: "Erreur", c: "bg-rose-500/15 text-rose-700 dark:text-rose-300" }
+          const row = accounts.find((x) => x.network === n);
+          // réseau ajouté dans le code mais pas encore dans la base (migration à lancer plus tard) : on l'affiche quand même
+          const pending = !row;
+          const a: Account = row ?? { network: n, enabled: false, handle: null, profile_url: null, linkedin_mode: "personne", last_ok_at: null, last_error: null, last_error_at: null };
+          const state = pending ? { t: "Prêt, base à mettre à jour", c: "bg-amber-500/15 text-amber-700 dark:text-amber-300" }
+            : a.last_error ? { t: "Erreur", c: "bg-rose-500/15 text-rose-700 dark:text-rose-300" }
             : a.enabled && a.last_ok_at ? { t: "Fonctionne", c: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300" }
             : a.enabled ? { t: "Branché, pas encore testé", c: "bg-amber-500/15 text-amber-700 dark:text-amber-300" }
             : { t: "Pas branché", c: "bg-soft-2 text-muted" };
@@ -73,6 +76,12 @@ export default async function Comptes({ searchParams }: { searchParams: Promise<
                 </div>
               )}
 
+              {pending ? (
+                <p className="mt-3 rounded-lg border border-border bg-soft p-3 text-sm">
+                  🛠️ {info.label} est prêt dans le Studio et dans n8n, mais pas encore activé dans la base de données
+                  (mise à jour <code>{n === "facebook" ? "0003_facebook.sql" : "à faire"}</code>, à lancer quand tu le décides). En attendant, rien ne part sur {info.label}.
+                </p>
+              ) : (
               <form action={updateAccount} className="mt-3 space-y-2">
                 <input type="hidden" name="network" value={n} />
                 <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="enabled" defaultChecked={a.enabled} /> Branché dans n8n (coché par défaut dans « Nouveau post »)</label>
@@ -93,6 +102,7 @@ export default async function Comptes({ searchParams }: { searchParams: Promise<
                   {a.profile_url && <a href={a.profile_url} target="_blank" rel="noreferrer" className="text-sm text-accent">Ouvrir le profil ↗</a>}
                 </div>
               </form>
+              )}
 
               <details className="mt-3 text-sm">
                 <summary className="cursor-pointer text-muted">Comment le brancher</summary>
