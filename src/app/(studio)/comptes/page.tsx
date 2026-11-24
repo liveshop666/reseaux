@@ -33,7 +33,7 @@ const FACEBOOK_MSG: Record<string, string> = {
   erreur: "Facebook a refusé la connexion (as-tu bien coché la Page Verdana ? adresse de redirection dans l'app Meta ?).",
 };
 
-export default async function Comptes({ searchParams }: { searchParams: Promise<{ tiktok?: string; instagram?: string; facebook?: string }> }) {
+export default async function Comptes({ searchParams }: { searchParams: Promise<{ tiktok?: string; instagram?: string; facebook?: string; fbmsg?: string }> }) {
   const sp = await searchParams;
   const supabase = await createClient();
   const { data, error } = await supabase.from("social_accounts").select("*");
@@ -51,7 +51,7 @@ export default async function Comptes({ searchParams }: { searchParams: Promise<
 
       {sp.tiktok && TIKTOK_MSG[sp.tiktok] && <div className="card mb-4 p-3 text-sm">{TIKTOK_MSG[sp.tiktok]}</div>}
       {sp.instagram && INSTAGRAM_MSG[sp.instagram] && <div className="card mb-4 p-3 text-sm">{INSTAGRAM_MSG[sp.instagram]}</div>}
-      {sp.facebook && FACEBOOK_MSG[sp.facebook] && <div className="card mb-4 p-3 text-sm">{FACEBOOK_MSG[sp.facebook]}</div>}
+      {sp.facebook && FACEBOOK_MSG[sp.facebook] && <div className="card mb-4 p-3 text-sm">{FACEBOOK_MSG[sp.facebook]}{sp.fbmsg && <span className="mt-1 block text-xs text-muted">Détail : {sp.fbmsg}</span>}</div>}
 
       <section className="card mb-6 p-4 text-sm">
         <h2 className="mb-2 font-head text-xl font-extrabold uppercase">Moteur</h2>

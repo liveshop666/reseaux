@@ -7,8 +7,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 /** Retour de Facebook : on garde le jeton de la Page et on coche « Branché ». */
 export async function GET(req: NextRequest) {
   try { await requireUser(); } catch { return NextResponse.redirect(new URL("/login", req.url)); }
-  const back = (q: string) => {
-    const res = NextResponse.redirect(new URL(`/comptes?facebook=${encodeURIComponent(q)}`, req.url));
+  const back = (q: string, msg?: string) => {
+    const res = NextResponse.redirect(new URL(`/comptes?facebook=${encodeURIComponent(q)}${msg ? `&fbmsg=${encodeURIComponent(msg.slice(0, 300))}` : ""}`, req.url));
     res.cookies.delete({ name: "facebook_state", path: "/api/oauth/facebook" });
     return res;
   };
@@ -26,6 +26,7 @@ export async function GET(req: NextRequest) {
     return back("ok");
   } catch (e) {
     console.error("Facebook OAuth", e);
-    return back("erreur");
+    // message d'erreur de Facebook (jamais de jeton dedans) pour comprendre sans les journaux
+    return back("erreur", e instanceof Error ? e.message : String(e));
   }
 }
