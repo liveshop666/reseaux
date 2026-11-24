@@ -4,7 +4,7 @@ import { PageHeader, Pill, SetupNotice, isMissingTable } from "@/components/ui";
 import { fmtDateTime, fmtRelative } from "@/lib/format";
 import { NETWORKS, NETWORK_INFO } from "@/lib/networks";
 import { createClient } from "@/lib/supabase/server";
-import { facebookCheck, facebookConfigured } from "@/lib/facebook";
+import { facebookCheck, facebookConfigured, facebookSecretCheck } from "@/lib/facebook";
 import { instagramCheck, instagramConfigured, instagramStatus } from "@/lib/instagram";
 import { tiktokConfigured, tiktokStatus } from "@/lib/tiktok";
 import type { Account } from "@/lib/types";
@@ -40,7 +40,7 @@ export default async function Comptes({ searchParams }: { searchParams: Promise<
   if (isMissingTable(error)) return <SetupNotice title="Comptes connectés" />;
   const accounts = (data ?? []) as Account[];
   const [tiktok, instagram] = await Promise.all([tiktokStatus(), instagramStatus()]);
-  const [igCheck, fb] = await Promise.all([instagram.connected ? instagramCheck() : Promise.resolve(null), facebookCheck()]);
+  const [igCheck, fb, fbSecret] = await Promise.all([instagram.connected ? instagramCheck() : Promise.resolve(null), facebookCheck(), facebookSecretCheck()]);
   const n8nReady = { ia: !!process.env.ASSEMBLYAI_API_KEY || !!process.env.GEMINI_API_KEY || !!process.env.ANTHROPIC_API_KEY, publish: !!process.env.N8N_PUBLISH_WEBHOOK_URL };
   const iaName = process.env.ASSEMBLYAI_API_KEY ? `AssemblyAI · ${process.env.ASSEMBLYAI_MODEL || "claude-sonnet-5-5"}` : process.env.GEMINI_API_KEY ? "Gemini" : "Claude";
 
@@ -117,7 +117,12 @@ export default async function Comptes({ searchParams }: { searchParams: Promise<
                       ? <>✅ Facebook connecté : Page <strong>{fb.name}</strong>. <a href="/api/oauth/facebook/start" className="text-accent underline">Reconnecter</a></>
                       : <span className="text-rose-600 dark:text-rose-400">⚠️ Jeton Facebook refusé : {fb.error} <a href="/api/oauth/facebook/start" className="underline">Reconnecter</a></span>
                     : facebookConfigured()
-                      ? <a href="/api/oauth/facebook/start" className="btn-primary">Connecter Facebook</a>
+                      ? <>
+                          <a href="/api/oauth/facebook/start" className="btn-primary">Connecter Facebook</a>
+                          <span className={`mt-2 block text-xs ${fbSecret.ok ? "text-muted" : "text-rose-600 dark:text-rose-400"}`}>
+                            {fbSecret.ok ? `✅ Clé secrète valide (${fbSecret.length} caractères).` : `⚠️ Clé secrète refusée par Facebook (${fbSecret.length} caractères, il en faut 32) : ${fbSecret.error}`}
+                          </span>
+                        </>
                       : <>Colle la clé secrète de l&apos;app Meta dans Vercel (<code>FACEBOOK_APP_SECRET</code>), puis Redeploy, pour activer le bouton « Connecter Facebook ».</>}
                 </div>
               )}

@@ -55,6 +55,18 @@ export async function getFacebookPageToken(): Promise<{ access_token: string; pa
   return { access_token: data.access_token, page_id: data.open_id, page_name: data.scope ?? null };
 }
 
+/** Vérifie que la clé secrète va avec l'app (sans jamais l'afficher) : longueur + test auprès de Facebook. */
+export async function facebookSecretCheck(): Promise<{ ok: boolean; length: number; error?: string }> {
+  const s = secret();
+  if (!s) return { ok: false, length: 0, error: "absente" };
+  try {
+    await get<{ access_token: string }>(`${GRAPH}/oauth/access_token?${new URLSearchParams({ client_id: appId(), client_secret: s, grant_type: "client_credentials" })}`);
+    return { ok: true, length: s.length };
+  } catch (e) {
+    return { ok: false, length: s.length, error: e instanceof Error ? e.message : String(e) };
+  }
+}
+
 /** Pour la page Comptes : vérifie en vrai le jeton (nom de la Page), sans l'exposer. */
 export async function facebookCheck(): Promise<{ connected: boolean; name?: string; error?: string }> {
   try {
