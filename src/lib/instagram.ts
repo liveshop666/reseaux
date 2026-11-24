@@ -62,28 +62,53 @@ export async function exchangeInstagramCode(code: string, redirectUri: string) {
   await save(long, short.user_id != null ? String(short.user_id) : null);
 }
 
-/** Jeton valide (prolongé de 60 jours s'il expire dans moins de 7 jours). */
-export async function getInstagramAccessToken(): Promise<{ access_token: string; user_id: string | null; expires_at: string | null }> {
-  const { data } = await createAdminClient().from("social_tokens").select("*").eq("network", "instagram").maybeSingle();
-  if (!data) throw new Error("Instagram n'est pas connecté : page « Comptes » → « Connecter Instagram ».");
-  const exp = data.expires_at ? new Date(data.expires_at).getTime() : 0;
-  if (exp && exp < Date.now()) throw new Error("Jeton Instagram expiré : reconnecte Instagram (page Comptes).");
-  if (exp - Date.now() > 7 * 24 * 3600_000) return { access_token: data.access_token, user_id: data.open_id, expires_at: data.expires_at };
+/** Adresse de l'API selon le type de jeton (IGAA… = Instagram, EAA… = Facebook/connexion unifiée). */
+const apiHost = (token: string) => (token.startsWith("IG") ? "graph.instagram.com" : "graph.facebook.com");
+const envToken = () => process.env.INSTAGRAM_ACCESS_TOKEN?.trim() || null;
+const envUserId = () => process.env.INSTAGRAM_USER_ID?.trim() || null;
+
+type Out = { access_token: string; user_id: string | null; expires_at: string | null; api_host: string };
+
+/** Essaie de prolonger un jeton Instagram de 60 jours (seulement les jetons IGAA…). */
+async function tryRefresh(token: string, userId: string | null): Promise<Out | null> {
+  if (!token.startsWith("IG")) return null;
   try {
-    const fresh = await call(`https://graph.instagram.com/refresh_access_token?${new URLSearchParams({ grant_type: "ig_refresh_token", access_token: data.access_token })}`);
-    await save(fresh, data.open_id);
-    return { access_token: fresh.access_token!, user_id: data.open_id, expires_at: new Date(Date.now() + (fresh.expires_in ?? 0) * 1000).toISOString() };
+    const fresh = await call(`https://graph.instagram.com/refresh_access_token?${new URLSearchParams({ grant_type: "ig_refresh_token", access_token: token })}`);
+    await save(fresh, userId);
+    return { access_token: fresh.access_token!, user_id: userId, expires_at: new Date(Date.now() + (fresh.expires_in ?? 0) * 1000).toISOString(), api_host: apiHost(fresh.access_token!) };
   } catch {
-    return { access_token: data.access_token, user_id: data.open_id, expires_at: data.expires_at };
+    return null;
   }
+}
+
+/**
+ * Jeton valide. Source : la base (bouton « Connecter Instagram » ou jeton déjà prolongé),
+ * sinon INSTAGRAM_ACCESS_TOKEN (jeton généré dans l'app Meta et collé dans Vercel).
+ */
+export async function getInstagramAccessToken(): Promise<Out> {
+  const { data } = await createAdminClient().from("social_tokens").select("*").eq("network", "instagram").maybeSingle();
+  if (!data) {
+    const t = envToken();
+    if (!t) throw new Error("Instagram n'est pas connecté : page « Comptes » → « Connecter Instagram ».");
+    // 1re utilisation du jeton collé : on le prolonge et on le garde en base si possible
+    return (await tryRefresh(t, envUserId())) ?? { access_token: t, user_id: envUserId(), expires_at: null, api_host: apiHost(t) };
+  }
+  const userId = data.open_id ?? envUserId();
+  const exp = data.expires_at ? new Date(data.expires_at).getTime() : 0;
+  if (exp && exp - Date.now() < 7 * 24 * 3600_000) {
+    const fresh = await tryRefresh(data.access_token, userId);
+    if (fresh) return fresh;
+    if (exp < Date.now()) throw new Error("Jeton Instagram expiré : reconnecte Instagram (page Comptes).");
+  }
+  return { access_token: data.access_token, user_id: userId, expires_at: data.expires_at, api_host: apiHost(data.access_token) };
 }
 
 /** Pour la page Comptes (sans jamais exposer le jeton). */
 export async function instagramStatus(): Promise<{ connected: boolean; until: string | null }> {
   try {
     const { data } = await createAdminClient().from("social_tokens").select("expires_at").eq("network", "instagram").maybeSingle();
-    return { connected: !!data, until: data?.expires_at ?? null };
+    return { connected: !!data || !!envToken(), until: data?.expires_at ?? null };
   } catch {
-    return { connected: false, until: null };
+    return { connected: !!envToken(), until: null };
   }
 }
