@@ -10,6 +10,7 @@ const MAIN = [{ href: "/", label: "Réseau", icon: "💬" }, { href: "/mails", l
 const NETWORKS = [
   { href: "/reseau/youtube", label: "YouTube", icon: "▶️" },
   { href: "/reseau/tiktok", label: "TikTok", icon: "🎵" },
+  { href: "/reseau/instagram", label: "Instagram", icon: "📸" },
   { href: "/reseau/linkedin", label: "LinkedIn", icon: "💼" },
   { href: "/reseau/google", label: "Fiche Google", icon: "📍" },
 ];

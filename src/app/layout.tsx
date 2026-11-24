@@ -8,7 +8,7 @@ const head = Barlow_Condensed({ variable: "--font-head", subsets: ["latin", "lat
 
 export const metadata: Metadata = {
   title: "Réseau · SolveLab",
-  description: "Un assistant pour publier sur YouTube, TikTok, LinkedIn et la fiche Google.",
+  description: "Un assistant pour publier sur YouTube, TikTok, Instagram, LinkedIn et la fiche Google.",
   manifest: "/manifest.webmanifest",
   icons: { icon: [{ url: "/favicon.svg", type: "image/svg+xml" }], apple: "/apple-touch-icon.png" },
   appleWebApp: { capable: true, title: "Réseau SolveLab", statusBarStyle: "black-translucent" },

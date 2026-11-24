@@ -32,7 +32,7 @@ export default async function Studio({ searchParams }: { searchParams: Promise<{
   const accounts = (accs ?? []) as Account[];
   const names = Object.fromEntries(NETWORKS.map((n) => {
     const a = accounts.find((x) => x.network === n);
-    const fallback = n === "linkedin" && a?.linkedin_mode === "personne" ? "Moi" : n === "tiktok" ? "solvelab" : "SolveLab";
+    const fallback = n === "linkedin" && a?.linkedin_mode === "personne" ? "Moi" : n === "instagram" || n === "tiktok" ? "solvelab" : "SolveLab";
     return [n, a?.handle || fallback];
   })) as Record<Network, string>;
 
