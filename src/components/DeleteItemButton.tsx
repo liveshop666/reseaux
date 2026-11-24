@@ -9,7 +9,7 @@ export function DeleteItemButton({ kind, id, network, label }: { kind: "target" 
   const [busy, start] = useTransition();
   const question = kind === "draft"
     ? "Supprimer ce brouillon ? Il ne sera pas publié."
-    : `Supprimer cette fiche du Studio ? Si elle est déjà en ligne, elle reste sur ${label}.`;
+    : `Supprimer cette publication du Réseau ? Si elle est déjà en ligne, elle reste sur ${label}.`;
   return (
     <button type="button" disabled={busy} className="btn-ghost text-rose-600 dark:text-rose-400"
       onClick={() => {
@@ -20,7 +20,7 @@ export function DeleteItemButton({ kind, id, network, label }: { kind: "target" 
           else router.push(`/reseau/${network}`);
         });
       }}>
-      {busy ? "Suppression…" : "🗑 Supprimer du Studio"}
+      {busy ? "Suppression…" : "🗑 Supprimer du Réseau"}
     </button>
   );
 }

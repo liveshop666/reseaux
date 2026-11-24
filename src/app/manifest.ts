@@ -3,8 +3,8 @@ import type { MetadataRoute } from "next";
 /** Permet d'installer le Studio sur l'écran d'accueil du téléphone. */
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Studio Réseaux SolveLab",
-    short_name: "Studio SolveLab",
+    name: "Réseau SolveLab",
+    short_name: "Réseau SolveLab",
     start_url: "/",
     display: "standalone",
     background_color: "#0b0710",
