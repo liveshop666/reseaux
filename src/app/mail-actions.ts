@@ -3,7 +3,20 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { errorMessage } from "@/lib/format";
-import { sendMail } from "@/lib/mail";
+import { sendMail, trashMail } from "@/lib/mail";
+
+/** Met un mail à la corbeille (aussi dans la boîte OVH). */
+export async function trashMailAction(folder: "inbox" | "sent", uid: number, goBack = false): Promise<{ error?: string }> {
+  await requireUser();
+  try {
+    await trashMail(folder === "sent" ? "sent" : "inbox", uid);
+  } catch (e) {
+    return { error: `Suppression impossible : ${errorMessage(e)}` };
+  }
+  revalidatePath("/mails");
+  if (goBack) redirect(folder === "sent" ? "/mails?d=sent" : "/mails");
+  return {};
+}
 
 const EMAIL = /^[^\s@<>,;]+@[^\s@<>,;]+\.[^\s@<>,;]+$/;
 
