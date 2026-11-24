@@ -1,4 +1,4 @@
-export const NETWORKS = ["youtube", "linkedin", "tiktok", "instagram", "google"] as const;
+export const NETWORKS = ["youtube", "linkedin", "tiktok", "instagram", "facebook", "google"] as const;
 export type Network = (typeof NETWORKS)[number];
 export type MediaType = "image" | "video" | null;
 
@@ -69,6 +69,17 @@ export const NETWORK_INFO: Record<Network, NetworkInfo> = {
       "developers.facebook.com : app « Studio SolveLab », cas d'utilisation « API Instagram » ; ajouter le compte Instagram comme testeur.",
       "Dans l'app : « Générez des tokens d'accès » → « Générer un token » pour le compte.",
       "Coller ce jeton dans Vercel (INSTAGRAM_ACCESS_TOKEN), puis Redeploy. Il est prolongé tout seul ensuite.",
+    ],
+  },
+  facebook: {
+    id: "facebook", label: "Facebook", short: "f", color: "bg-blue-500/15 text-blue-700 dark:text-blue-300",
+    max: 5000,
+    accepts: { text: true, image: true, video: true },
+    limit: "Publie sur la Page Facebook Verdana (pas sur ton profil perso) : texte seul, photo ou vidéo.",
+    setup: [
+      "App Meta « Studio SolveLab » : cas d'utilisation « Tout gérer sur votre Page ».",
+      "Adresse de redirection : <adresse du Réseau>/api/oauth/facebook/callback.",
+      "Coller la clé secrète de l'app dans Vercel (FACEBOOK_APP_SECRET), puis bouton « Connecter Facebook » ci-dessous (choisir la Page Verdana).",
     ],
   },
   google: {
