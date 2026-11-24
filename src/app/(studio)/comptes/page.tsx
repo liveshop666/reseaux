@@ -4,6 +4,7 @@ import { PageHeader, Pill, SetupNotice, isMissingTable } from "@/components/ui";
 import { fmtDateTime, fmtRelative } from "@/lib/format";
 import { NETWORKS, NETWORK_INFO } from "@/lib/networks";
 import { createClient } from "@/lib/supabase/server";
+import { facebookCheck, facebookConfigured } from "@/lib/facebook";
 import { instagramCheck, instagramConfigured, instagramStatus } from "@/lib/instagram";
 import { tiktokConfigured, tiktokStatus } from "@/lib/tiktok";
 import type { Account } from "@/lib/types";
@@ -24,14 +25,22 @@ const INSTAGRAM_MSG: Record<string, string> = {
   erreur: "Instagram a refusé la connexion (compte pro ? testeur accepté dans l'app ? adresse de redirection ?).",
 };
 
-export default async function Comptes({ searchParams }: { searchParams: Promise<{ tiktok?: string; instagram?: string }> }) {
+const FACEBOOK_MSG: Record<string, string> = {
+  ok: "✅ Facebook est connecté (Page Verdana).",
+  config: "Il manque FACEBOOK_APP_SECRET dans Vercel (puis Redeploy).",
+  refus: "Connexion Facebook annulée.",
+  etat: "La connexion a expiré, recommence.",
+  erreur: "Facebook a refusé la connexion (as-tu bien coché la Page Verdana ? adresse de redirection dans l'app Meta ?).",
+};
+
+export default async function Comptes({ searchParams }: { searchParams: Promise<{ tiktok?: string; instagram?: string; facebook?: string }> }) {
   const sp = await searchParams;
   const supabase = await createClient();
   const { data, error } = await supabase.from("social_accounts").select("*");
   if (isMissingTable(error)) return <SetupNotice title="Comptes connectés" />;
   const accounts = (data ?? []) as Account[];
   const [tiktok, instagram] = await Promise.all([tiktokStatus(), instagramStatus()]);
-  const igCheck = instagram.connected ? await instagramCheck() : null;
+  const [igCheck, fb] = await Promise.all([instagram.connected ? instagramCheck() : Promise.resolve(null), facebookCheck()]);
   const n8nReady = { ia: !!process.env.ASSEMBLYAI_API_KEY || !!process.env.GEMINI_API_KEY || !!process.env.ANTHROPIC_API_KEY, publish: !!process.env.N8N_PUBLISH_WEBHOOK_URL };
   const iaName = process.env.ASSEMBLYAI_API_KEY ? `AssemblyAI · ${process.env.ASSEMBLYAI_MODEL || "claude-sonnet-5-5"}` : process.env.GEMINI_API_KEY ? "Gemini" : "Claude";
 
@@ -42,6 +51,7 @@ export default async function Comptes({ searchParams }: { searchParams: Promise<
 
       {sp.tiktok && TIKTOK_MSG[sp.tiktok] && <div className="card mb-4 p-3 text-sm">{TIKTOK_MSG[sp.tiktok]}</div>}
       {sp.instagram && INSTAGRAM_MSG[sp.instagram] && <div className="card mb-4 p-3 text-sm">{INSTAGRAM_MSG[sp.instagram]}</div>}
+      {sp.facebook && FACEBOOK_MSG[sp.facebook] && <div className="card mb-4 p-3 text-sm">{FACEBOOK_MSG[sp.facebook]}</div>}
 
       <section className="card mb-6 p-4 text-sm">
         <h2 className="mb-2 font-head text-xl font-extrabold uppercase">Moteur</h2>
@@ -97,6 +107,18 @@ export default async function Comptes({ searchParams }: { searchParams: Promise<
                     : instagramConfigured()
                       ? <a href="/api/oauth/instagram/start" className="btn-primary">Connecter Instagram</a>
                       : <>Colle le jeton généré dans l&apos;app Meta dans Vercel (<code>INSTAGRAM_ACCESS_TOKEN</code>), puis Redeploy.</>}
+                </div>
+              )}
+
+              {n === "facebook" && (
+                <div className="mt-3 rounded-lg border border-border bg-soft p-3 text-sm">
+                  {fb.connected
+                    ? fb.name
+                      ? <>✅ Facebook connecté : Page <strong>{fb.name}</strong>. <a href="/api/oauth/facebook/start" className="text-accent underline">Reconnecter</a></>
+                      : <span className="text-rose-600 dark:text-rose-400">⚠️ Jeton Facebook refusé : {fb.error} <a href="/api/oauth/facebook/start" className="underline">Reconnecter</a></span>
+                    : facebookConfigured()
+                      ? <a href="/api/oauth/facebook/start" className="btn-primary">Connecter Facebook</a>
+                      : <>Colle la clé secrète de l&apos;app Meta dans Vercel (<code>FACEBOOK_APP_SECRET</code>), puis Redeploy, pour activer le bouton « Connecter Facebook ».</>}
                 </div>
               )}
 
