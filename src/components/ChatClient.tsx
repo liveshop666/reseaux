@@ -57,6 +57,8 @@ export function ChatClient({ conversationId, initial, names }: { conversationId:
   const baseRef = useRef("");
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" }); }, [rows, live, status]);
+  // « Studio » rouvre cette conversation ; seule « Nouvelle conversation » en crée une autre
+  useEffect(() => { document.cookie = `studio_conv=${conversationId}; path=/; max-age=31536000; samesite=lax`; }, [conversationId]);
   useEffect(() => {
     const ta = taRef.current;
     if (ta) { ta.style.height = "auto"; ta.style.height = Math.min(ta.scrollHeight, 200) + "px"; }
