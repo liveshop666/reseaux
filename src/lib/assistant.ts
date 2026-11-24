@@ -177,7 +177,12 @@ export async function runTool(name: string, input: unknown, ctx: ToolContext): P
     switch (name) {
       case "proposer_post": {
         const p = ProposerInput.safeParse(input);
-        if (!p.success) return fail("Brouillon invalide : " + p.error.issues.map((i) => i.message).join("; "));
+        if (!p.success) {
+          const emptyNets = p.error.issues.some((i) => i.path[0] === "reseaux");
+          return fail(emptyNets
+            ? `Brouillon invalide : "reseaux" ne doit pas être vide. Mets un objet par réseau, ex. "reseaux": [{"reseau":"linkedin","titre":"","texte":"le texte final"}]. Réseaux possibles : ${networkEnum.join(", ")}.`
+            : "Brouillon invalide : " + p.error.issues.map((i) => `${i.path.join(".")} : ${i.message}`).join("; "));
+        }
         const mediaType: MediaType = p.data.media_type === "aucun" || !p.data.media_url ? null : p.data.media_type;
         if (p.data.media_url && !checkMediaUrl(p.data.media_url)) return fail("media_url inconnu : utilise exactement un lien reçu de l'utilisateur ou du montage.");
         const problems: string[] = [];
