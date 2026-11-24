@@ -65,7 +65,8 @@ export async function exchangeInstagramCode(code: string, redirectUri: string) {
 /** Adresse de l'API selon le type de jeton (IGAA… = Instagram, EAA… = Facebook/connexion unifiée). */
 const apiHost = (token: string) => (token.startsWith("IG") ? "graph.instagram.com" : "graph.facebook.com");
 const envToken = () => process.env.INSTAGRAM_ACCESS_TOKEN?.trim() || null;
-const envUserId = () => process.env.INSTAGRAM_USER_ID?.trim() || null;
+/** Compte Instagram où publier (par défaut bylena_creatrice, id donné par l'app Meta). */
+const envUserId = () => process.env.INSTAGRAM_USER_ID?.trim() || "17841471850743520";
 
 type Out = { access_token: string; user_id: string | null; expires_at: string | null; api_host: string };
 
