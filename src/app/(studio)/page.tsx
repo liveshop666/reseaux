@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { ChatClient, type Row } from "@/components/ChatClient";
 import { SetupNotice, isMissingTable } from "@/components/ui";
@@ -14,6 +15,8 @@ export default async function Studio({ searchParams }: { searchParams: Promise<{
 
   let conversationId = sp.c && /^[0-9a-f-]{36}$/i.test(sp.c) ? sp.c : "";
   if (!conversationId) {
+    const last = (await cookies()).get("studio_conv")?.value ?? "";
+    if (/^[0-9a-f-]{36}$/i.test(last)) redirect(`/?c=${last}`);
     const { data, error } = await supabase.from("social_messages").select("conversation_id").order("created_at", { ascending: false }).limit(1);
     if (isMissingTable(error)) return <SetupNotice title="Studio" />;
     conversationId = data?.[0]?.conversation_id ?? randomUUID();
