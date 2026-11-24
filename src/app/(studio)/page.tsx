@@ -18,7 +18,7 @@ export default async function Studio({ searchParams }: { searchParams: Promise<{
     const last = (await cookies()).get("studio_conv")?.value ?? "";
     if (/^[0-9a-f-]{36}$/i.test(last)) redirect(`/?c=${last}`);
     const { data, error } = await supabase.from("social_messages").select("conversation_id").order("created_at", { ascending: false }).limit(1);
-    if (isMissingTable(error)) return <SetupNotice title="Studio" />;
+    if (isMissingTable(error)) return <SetupNotice title="Réseau" />;
     conversationId = data?.[0]?.conversation_id ?? randomUUID();
     redirect(`/?c=${conversationId}`);
   }
@@ -27,7 +27,7 @@ export default async function Studio({ searchParams }: { searchParams: Promise<{
     supabase.from("social_messages").select("id, role, content").eq("conversation_id", conversationId).order("created_at").order("id"),
     supabase.from("social_accounts").select("*"),
   ]);
-  if (isMissingTable(error)) return <SetupNotice title="Studio" />;
+  if (isMissingTable(error)) return <SetupNotice title="Réseau" />;
 
   const accounts = (accs ?? []) as Account[];
   const names = Object.fromEntries(NETWORKS.map((n) => {

@@ -53,7 +53,7 @@ export function SetupNotice({ title }: { title: string }) {
     <div className="mx-auto max-w-3xl">
       <PageHeader title={title} />
       <div className="card p-5 text-sm">
-        <p className="font-medium">Le Studio n&apos;est pas encore installé dans ta base de données.</p>
+        <p className="font-medium">Le Réseau n&apos;est pas encore installé dans ta base de données.</p>
         <p className="mt-2 text-muted">
           Dans Supabase (projet <b>crm-prospection</b>) → <b>SQL Editor</b> → <b>New query</b>, colle le contenu du fichier{" "}
           <code>supabase/migrations/0001_studio_reseaux.sql</code> (dépôt GitHub reseaux) puis clique sur <b>Run</b>. Recharge ensuite cette page.

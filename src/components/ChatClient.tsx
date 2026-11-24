@@ -202,7 +202,7 @@ export function ChatClient({ conversationId, initial, names }: { conversationId:
         <div className="mx-auto flex max-w-3xl flex-col gap-4 pb-4">
           {empty && (
             <div className="mt-10 text-center">
-              <h1 className="font-head text-4xl leading-none font-extrabold uppercase md:text-5xl">Studio <span className="text-warm">réseaux</span></h1>
+              <h1 className="font-head text-4xl leading-none font-extrabold uppercase md:text-5xl">Réseau <span className="text-warm">SolveLab</span></h1>
               <p className="mx-auto mt-3 max-w-md text-sm text-muted">Dis-moi quoi publier. J&apos;écris, j&apos;adapte pour chaque réseau, je monte la vidéo si besoin — et je ne publie qu&apos;après ton « je valide ».</p>
               <div className="mt-5 flex flex-col items-center gap-2">
                 {SUGGESTIONS.map((s) => <button key={s} type="button" onClick={() => setInput(s)} className="btn-ghost max-w-full text-left whitespace-normal">{s}</button>)}

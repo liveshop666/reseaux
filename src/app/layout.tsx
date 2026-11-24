@@ -7,11 +7,11 @@ const body = DM_Sans({ variable: "--font-body", subsets: ["latin", "latin-ext"],
 const head = Barlow_Condensed({ variable: "--font-head", subsets: ["latin", "latin-ext"], weight: ["700", "800"] });
 
 export const metadata: Metadata = {
-  title: "Studio Réseaux · SolveLab",
+  title: "Réseau · SolveLab",
   description: "Un assistant pour publier sur YouTube, TikTok, LinkedIn et la fiche Google.",
   manifest: "/manifest.webmanifest",
   icons: { icon: [{ url: "/favicon.svg", type: "image/svg+xml" }], apple: "/apple-touch-icon.png" },
-  appleWebApp: { capable: true, title: "Studio SolveLab", statusBarStyle: "black-translucent" },
+  appleWebApp: { capable: true, title: "Réseau SolveLab", statusBarStyle: "black-translucent" },
 };
 
 export const viewport: Viewport = { themeColor: "#0b0710" };

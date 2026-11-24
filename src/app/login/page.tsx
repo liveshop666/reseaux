@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 function LoginForm() {
   const router = useRouter();
   const params = useSearchParams();
-  const [error, setError] = useState(params.get("error") === "non_autorise" ? "Ce compte n'a pas accès au Studio." : "");
+  const [error, setError] = useState(params.get("error") === "non_autorise" ? "Ce compte n'a pas accès au Réseau." : "");
   const [loading, setLoading] = useState(false);
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -40,7 +40,7 @@ function LoginForm() {
   return (
     <form onSubmit={onSubmit} className="card w-full max-w-sm space-y-4 p-6">
       <div className="mb-2"><Brand size={48} /></div>
-      <h1 className="font-head text-3xl leading-none font-extrabold uppercase">Connexion <span className="text-warm">au Studio</span></h1>
+      <h1 className="font-head text-3xl leading-none font-extrabold uppercase">Connexion <span className="text-warm">au Réseau</span></h1>
       <label className="block"><span className="label">Email</span><input name="email" type="email" required autoComplete="email" className="input" /></label>
       <label className="block"><span className="label">Mot de passe</span><input name="password" type="password" required autoComplete="current-password" className="input" /></label>
       {error && <p className="text-sm text-rose-600 dark:text-rose-400">{error}</p>}

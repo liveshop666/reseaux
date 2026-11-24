@@ -51,7 +51,7 @@ export default async function Publication({ params }: { params: Promise<{ networ
             <DeleteItemButton kind={it.kind} id={it.id} network={network} label={info.label} />
           </div>
           {it.kind === "target" && it.status === "publie" && (
-            <p className="mt-3 text-xs text-muted">« Supprimer du Studio » retire seulement la fiche d&apos;ici : la publication reste en ligne sur {info.label}.</p>
+            <p className="mt-3 text-xs text-muted">« Supprimer du Réseau » retire seulement la fiche d&apos;ici : la publication reste en ligne sur {info.label}.</p>
           )}
         </div>
       </article>

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { CardMenu } from "@/components/CardMenu";
 import { Empty, PageHeader, Pill, SetupNotice, TargetStatusPill, isMissingTable } from "@/components/ui";
 import { fmtDateTime, fmtRelative } from "@/lib/format";
 import { NETWORK_INFO, isNetwork } from "@/lib/networks";
@@ -51,7 +52,8 @@ export default async function Reseau({ params }: { params: Promise<{ network: st
         : (
           <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {items.map((it) => (
-              <li key={it.key}>
+              <li key={it.key} className="relative">
+                <CardMenu kind={it.kind} id={it.id} label={info.label} />
                 <Link href={`/reseau/${network}/${it.key}`}
                   className="group block overflow-hidden rounded-xl border border-border bg-surface transition hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-2 focus-visible:outline-accent">
                   <div className="relative aspect-video overflow-hidden bg-soft">
