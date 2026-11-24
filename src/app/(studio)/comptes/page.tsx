@@ -4,7 +4,7 @@ import { PageHeader, Pill, SetupNotice, isMissingTable } from "@/components/ui";
 import { fmtDateTime, fmtRelative } from "@/lib/format";
 import { NETWORKS, NETWORK_INFO } from "@/lib/networks";
 import { createClient } from "@/lib/supabase/server";
-import { instagramConfigured, instagramStatus } from "@/lib/instagram";
+import { instagramCheck, instagramConfigured, instagramStatus } from "@/lib/instagram";
 import { tiktokConfigured, tiktokStatus } from "@/lib/tiktok";
 import type { Account } from "@/lib/types";
 
@@ -31,6 +31,7 @@ export default async function Comptes({ searchParams }: { searchParams: Promise<
   if (isMissingTable(error)) return <SetupNotice title="Comptes connectés" />;
   const accounts = (data ?? []) as Account[];
   const [tiktok, instagram] = await Promise.all([tiktokStatus(), instagramStatus()]);
+  const igCheck = instagram.connected ? await instagramCheck() : null;
   const n8nReady = { ia: !!process.env.ASSEMBLYAI_API_KEY || !!process.env.GEMINI_API_KEY || !!process.env.ANTHROPIC_API_KEY, publish: !!process.env.N8N_PUBLISH_WEBHOOK_URL };
   const iaName = process.env.ASSEMBLYAI_API_KEY ? `AssemblyAI · ${process.env.ASSEMBLYAI_MODEL || "claude-sonnet-5-5"}` : process.env.GEMINI_API_KEY ? "Gemini" : "Claude";
 
@@ -90,7 +91,9 @@ export default async function Comptes({ searchParams }: { searchParams: Promise<
               {n === "instagram" && (
                 <div className="mt-3 rounded-lg border border-border bg-soft p-3 text-sm">
                   {instagram.connected
-                    ? <>✅ Instagram connecté{instagram.until && <> (jeton valable jusqu&apos;au {fmtDateTime(instagram.until)}, prolongé tout seul)</>}. <a href="/api/oauth/instagram/start" className="text-accent underline">Reconnecter</a></>
+                    ? igCheck?.username
+                      ? <>✅ Instagram connecté : <strong>@{igCheck.username}</strong>{instagram.until && <> (jeton valable jusqu&apos;au {fmtDateTime(instagram.until)}, prolongé tout seul)</>}.</>
+                      : <span className="text-rose-600 dark:text-rose-400">⚠️ Jeton Instagram refusé : {igCheck?.error}</span>
                     : instagramConfigured()
                       ? <a href="/api/oauth/instagram/start" className="btn-primary">Connecter Instagram</a>
                       : <>Colle le jeton généré dans l&apos;app Meta dans Vercel (<code>INSTAGRAM_ACCESS_TOKEN</code>), puis Redeploy.</>}

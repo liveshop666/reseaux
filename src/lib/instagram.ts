@@ -103,6 +103,19 @@ export async function getInstagramAccessToken(): Promise<Out> {
   return { access_token: data.access_token, user_id: userId, expires_at: data.expires_at, api_host: apiHost(data.access_token) };
 }
 
+/** Vérifie en vrai que le jeton marche : renvoie le nom du compte Instagram, ou l'erreur. */
+export async function instagramCheck(): Promise<{ username?: string; error?: string }> {
+  try {
+    const t = await getInstagramAccessToken();
+    const id = t.user_id || "me";
+    const res = await fetch(`https://${t.api_host}/v23.0/${id}?${new URLSearchParams({ fields: "username", access_token: t.access_token })}`, { cache: "no-store", signal: AbortSignal.timeout(10000) });
+    const j = (await res.json().catch(() => ({}))) as { username?: string; error?: { message?: string } };
+    return j.username ? { username: j.username } : { error: j.error?.message || `réponse ${res.status}` };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : String(e) };
+  }
+}
+
 /** Pour la page Comptes (sans jamais exposer le jeton). */
 export async function instagramStatus(): Promise<{ connected: boolean; until: string | null }> {
   try {
