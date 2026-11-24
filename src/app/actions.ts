@@ -58,6 +58,38 @@ export async function deletePost(postId: string): Promise<{ error?: string }> {
   return {};
 }
 
+/** Retire une publication d'UN réseau du Studio (ne touche pas au réseau lui-même). */
+export async function deleteTarget(id: string): Promise<{ error?: string }> {
+  const supabase = await requireUser();
+  const { data: t } = await supabase.from("social_targets").select("post_id, status").eq("id", id).maybeSingle();
+  if (!t) return {};
+  if (t.status === "en_cours") return { error: "Publication en cours : attends la fin avant de supprimer." };
+  await supabase.from("social_targets").delete().eq("id", id);
+  const { count } = await supabase.from("social_targets").select("id", { count: "exact", head: true }).eq("post_id", t.post_id);
+  if (!count) return deletePost(t.post_id);
+  revalidatePath("/", "layout");
+  return {};
+}
+
+/** Supprime un brouillon pas encore validé. */
+export async function deleteDraft(id: string): Promise<{ error?: string }> {
+  const supabase = await requireUser();
+  await supabase.from("social_drafts").delete().eq("id", id).is("post_id", null);
+  revalidatePath("/", "layout");
+  return {};
+}
+
+/** Supprime une conversation (messages + brouillons non validés). Les publications restent. */
+export async function deleteConversation(id: string): Promise<{ error?: string }> {
+  if (!/^[0-9a-f-]{36}$/i.test(id)) return { error: "Conversation invalide" };
+  const supabase = await requireUser();
+  await supabase.from("social_drafts").delete().eq("conversation_id", id).is("post_id", null);
+  const { error } = await supabase.from("social_messages").delete().eq("conversation_id", id);
+  if (error) return { error: error.message };
+  revalidatePath("/", "layout");
+  return {};
+}
+
 /* ------------------------------------------------------------------ */
 /* Comptes                                                             */
 /* ------------------------------------------------------------------ */

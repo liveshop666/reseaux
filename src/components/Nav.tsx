@@ -1,8 +1,10 @@
 "use client";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { signOut } from "@/app/actions";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useTransition } from "react";
+import { deleteConversation, signOut } from "@/app/actions";
 import { Brand } from "@/components/Brand";
+import type { ConversationItem } from "@/lib/conversations";
 
 const MAIN = [{ href: "/", label: "Studio", icon: "💬" }];
 const NETWORKS = [
@@ -17,7 +19,41 @@ const MORE = [
 ];
 const ALL = [...MAIN, ...NETWORKS, ...MORE];
 
-export function Nav({ scheduled, errors }: { scheduled: number; errors: number }) {
+/** Liste des conversations (comme l'historique de Claude), avec suppression. */
+function Conversations({ items }: { items: ConversationItem[] }) {
+  const path = usePathname();
+  const current = useSearchParams().get("c");
+  const router = useRouter();
+  const [busy, start] = useTransition();
+  if (!items.length) return null;
+  return (
+    <div className="mt-4 flex min-h-0 flex-col">
+      <div className="px-3 text-[11px] font-semibold tracking-wider text-muted uppercase">Conversations</div>
+      <ul className="mt-1 flex flex-col gap-0.5 overflow-y-auto">
+        {items.map((c) => {
+          const on = path === "/" && current === c.id;
+          return (
+            <li key={c.id} className={`group flex items-center rounded-lg ${on ? "bg-accent/15" : "hover:bg-soft"}`}>
+              <Link href={`/?c=${c.id}`} title={c.title} className={`min-w-0 flex-1 truncate px-3 py-1.5 text-sm ${on ? "font-semibold text-text" : "text-muted hover:text-text"}`}>{c.title}</Link>
+              <button type="button" disabled={busy} title="Supprimer la conversation" aria-label={`Supprimer « ${c.title} »`}
+                className="mr-1 shrink-0 rounded px-1.5 py-1 text-xs text-muted opacity-0 group-hover:opacity-100 hover:text-rose-600 focus:opacity-100"
+                onClick={() => {
+                  if (!confirm(`Supprimer la conversation « ${c.title} » ? Les publications déjà faites restent.`)) return;
+                  start(async () => {
+                    const r = await deleteConversation(c.id);
+                    if (r.error) alert(r.error);
+                    else if (on) router.push("/?c=new");
+                  });
+                }}>🗑</button>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
+export function Nav({ scheduled, errors, conversations }: { scheduled: number; errors: number; conversations: ConversationItem[] }) {
   const path = usePathname();
   const active = (href: string) => (href === "/" ? path === "/" : path.startsWith(href));
   const link = (l: { href: string; label: string; icon: string }) => (
@@ -40,6 +76,7 @@ export function Nav({ scheduled, errors }: { scheduled: number; errors: number }
           <div className="mt-3 px-3 text-[11px] font-semibold tracking-wider text-muted uppercase">Suivi</div>
           {MORE.map(link)}
         </nav>
+        <Conversations items={conversations} />
         {scheduled > 0 && <p className="mt-4 px-3 text-xs text-muted">⏰ {scheduled} publication{scheduled > 1 ? "s" : ""} programmée{scheduled > 1 ? "s" : ""}</p>}
         <form action={signOut} className="mt-auto pt-4"><button className="btn-ghost w-full">Se déconnecter</button></form>
       </aside>
