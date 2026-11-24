@@ -1,7 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // librairies mail (IMAP/SMTP) : chargées telles quelles côté serveur
+  serverExternalPackages: ["imapflow", "nodemailer", "mailparser"],
 };
 
 export default nextConfig;
