@@ -4,6 +4,7 @@ import { PageHeader, Pill, SetupNotice, isMissingTable } from "@/components/ui";
 import { fmtDateTime, fmtRelative } from "@/lib/format";
 import { NETWORKS, NETWORK_INFO } from "@/lib/networks";
 import { createClient } from "@/lib/supabase/server";
+import { instagramConfigured, instagramStatus } from "@/lib/instagram";
 import { tiktokConfigured, tiktokStatus } from "@/lib/tiktok";
 import type { Account } from "@/lib/types";
 
@@ -15,13 +16,21 @@ const TIKTOK_MSG: Record<string, string> = {
   erreur: "TikTok a refusé la connexion (vérifie l'adresse de redirection dans ton app TikTok).",
 };
 
-export default async function Comptes({ searchParams }: { searchParams: Promise<{ tiktok?: string }> }) {
+const INSTAGRAM_MSG: Record<string, string> = {
+  ok: "✅ Instagram est connecté.",
+  config: "Il manque INSTAGRAM_APP_ID et INSTAGRAM_APP_SECRET dans Vercel (puis Redeploy).",
+  refus: "Connexion Instagram annulée.",
+  etat: "La connexion a expiré, recommence.",
+  erreur: "Instagram a refusé la connexion (compte pro ? testeur accepté dans l'app ? adresse de redirection ?).",
+};
+
+export default async function Comptes({ searchParams }: { searchParams: Promise<{ tiktok?: string; instagram?: string }> }) {
   const sp = await searchParams;
   const supabase = await createClient();
   const { data, error } = await supabase.from("social_accounts").select("*");
   if (isMissingTable(error)) return <SetupNotice title="Comptes connectés" />;
   const accounts = (data ?? []) as Account[];
-  const tiktok = await tiktokStatus();
+  const [tiktok, instagram] = await Promise.all([tiktokStatus(), instagramStatus()]);
   const n8nReady = { ia: !!process.env.ASSEMBLYAI_API_KEY || !!process.env.GEMINI_API_KEY || !!process.env.ANTHROPIC_API_KEY, publish: !!process.env.N8N_PUBLISH_WEBHOOK_URL };
   const iaName = process.env.ASSEMBLYAI_API_KEY ? `AssemblyAI · ${process.env.ASSEMBLYAI_MODEL || "claude-sonnet-5-5"}` : process.env.GEMINI_API_KEY ? "Gemini" : "Claude";
 
@@ -31,6 +40,7 @@ export default async function Comptes({ searchParams }: { searchParams: Promise<
         subtitle="Connexions directes et gratuites : n8n publie avec tes propres accès, sans service payant." />
 
       {sp.tiktok && TIKTOK_MSG[sp.tiktok] && <div className="card mb-4 p-3 text-sm">{TIKTOK_MSG[sp.tiktok]}</div>}
+      {sp.instagram && INSTAGRAM_MSG[sp.instagram] && <div className="card mb-4 p-3 text-sm">{INSTAGRAM_MSG[sp.instagram]}</div>}
 
       <section className="card mb-6 p-4 text-sm">
         <h2 className="mb-2 font-head text-xl font-extrabold uppercase">Moteur</h2>
@@ -74,6 +84,16 @@ export default async function Comptes({ searchParams }: { searchParams: Promise<
                     : tiktokConfigured()
                       ? <a href="/api/oauth/tiktok/start" className="btn-primary">Connecter TikTok</a>
                       : <>Ajoute <code>TIKTOK_CLIENT_KEY</code> et <code>TIKTOK_CLIENT_SECRET</code> dans Vercel pour activer le bouton « Connecter TikTok ».</>}
+                </div>
+              )}
+
+              {n === "instagram" && (
+                <div className="mt-3 rounded-lg border border-border bg-soft p-3 text-sm">
+                  {instagram.connected
+                    ? <>✅ Instagram connecté{instagram.until && <> (jeton valable jusqu&apos;au {fmtDateTime(instagram.until)}, prolongé tout seul)</>}. <a href="/api/oauth/instagram/start" className="text-accent underline">Reconnecter</a></>
+                    : instagramConfigured()
+                      ? <a href="/api/oauth/instagram/start" className="btn-primary">Connecter Instagram</a>
+                      : <>Ajoute <code>INSTAGRAM_APP_ID</code> et <code>INSTAGRAM_APP_SECRET</code> dans Vercel pour activer le bouton « Connecter Instagram ».</>}
                 </div>
               )}
 

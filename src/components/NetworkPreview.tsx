@@ -84,6 +84,18 @@ export function NetworkPreview({ network, text, title, mediaUrl, mediaType, show
     );
   }
 
+  if (network === "instagram") {
+    return (
+      <div className="overflow-hidden rounded-lg bg-white text-[#262626]">
+        <div className="flex items-center gap-2 p-2.5"><Avatar /><span className="text-sm font-semibold">{name.replace(/^@/, "")}</span></div>
+        <div className="aspect-square bg-[#efefef]">{media && <Media url={media} type={mediaType} className="size-full" />}</div>
+        <div className="p-3 text-sm">
+          <div className="mb-1 text-lg">♡ 💬 ↗</div>
+          <span className="font-semibold">{name.replace(/^@/, "")}</span> <Folded text={text} at={125} more="plus" />
+        </div>
+      </div>
+    );
+  }
 
   // fiche Google
   return (
