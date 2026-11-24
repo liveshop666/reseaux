@@ -6,7 +6,7 @@ import { deleteConversation, signOut } from "@/app/actions";
 import { Brand } from "@/components/Brand";
 import type { ConversationItem } from "@/lib/conversations";
 
-const MAIN = [{ href: "/", label: "Studio", icon: "💬" }];
+const MAIN = [{ href: "/", label: "Studio", icon: "💬" }, { href: "/mails", label: "Mails", icon: "✉️" }];
 const NETWORKS = [
   { href: "/reseau/youtube", label: "YouTube", icon: "▶️" },
   { href: "/reseau/tiktok", label: "TikTok", icon: "🎵" },
