@@ -76,7 +76,8 @@ export async function listMails(folder: Folder, limit = 40): Promise<MailSummary
           seen: m.flags?.has("\\Seen") ?? false,
         });
       }
-      return out.sort((a, b) => b.uid - a.uid);
+      // du plus récent au plus ancien (date du mail, pas l'ordre d'arrivée dans le dossier)
+      return out.sort((a, b) => (b.date ?? "").localeCompare(a.date ?? "") || b.uid - a.uid);
     } finally {
       lock.release();
     }
