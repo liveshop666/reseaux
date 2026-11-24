@@ -67,8 +67,8 @@ export const NETWORK_INFO: Record<Network, NetworkInfo> = {
     setup: [
       "Compte Instagram en « professionnel » (Créateur ou Entreprise).",
       "developers.facebook.com : app « Studio SolveLab », cas d'utilisation « API Instagram » ; ajouter le compte Instagram comme testeur.",
-      "Adresse de redirection : <adresse du Réseau>/api/oauth/instagram/callback.",
-      "Copier l'ID et la clé secrète de l'app Instagram dans Vercel (INSTAGRAM_APP_ID, INSTAGRAM_APP_SECRET), puis bouton « Connecter Instagram » ci-dessous.",
+      "Dans l'app : « Générez des tokens d'accès » → « Générer un token » pour le compte.",
+      "Coller ce jeton dans Vercel (INSTAGRAM_ACCESS_TOKEN), puis Redeploy. Il est prolongé tout seul ensuite.",
     ],
   },
   google: {

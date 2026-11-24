@@ -93,7 +93,7 @@ export default async function Comptes({ searchParams }: { searchParams: Promise<
                     ? <>✅ Instagram connecté{instagram.until && <> (jeton valable jusqu&apos;au {fmtDateTime(instagram.until)}, prolongé tout seul)</>}. <a href="/api/oauth/instagram/start" className="text-accent underline">Reconnecter</a></>
                     : instagramConfigured()
                       ? <a href="/api/oauth/instagram/start" className="btn-primary">Connecter Instagram</a>
-                      : <>Ajoute <code>INSTAGRAM_APP_ID</code> et <code>INSTAGRAM_APP_SECRET</code> dans Vercel pour activer le bouton « Connecter Instagram ».</>}
+                      : <>Colle le jeton généré dans l&apos;app Meta dans Vercel (<code>INSTAGRAM_ACCESS_TOKEN</code>), puis Redeploy.</>}
                 </div>
               )}
 
