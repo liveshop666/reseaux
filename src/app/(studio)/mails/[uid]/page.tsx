@@ -28,7 +28,6 @@ export default async function MailDetail({ params, searchParams }: { params: P; 
 
   const replyTo = mail.replyTo || mail.fromAddress;
   const subject = /^re\s*:/i.test(mail.subject) ? mail.subject : `Re: ${mail.subject}`;
-  const quoted = mail.text ? `\n\n\nLe ${fmtDateTime(mail.date)}, ${mail.from} a écrit :\n${mail.text.split("\n").map((l) => `> ${l}`).join("\n")}` : "";
   const references = [...mail.references, mail.messageId].filter(Boolean).join(" ");
 
   return (
@@ -63,7 +62,7 @@ export default async function MailDetail({ params, searchParams }: { params: P; 
       {folder === "inbox" && replyTo && (
         <>
           <h2 className="mb-2 font-semibold">Répondre</h2>
-          <MailForm to={replyTo} subject={subject} inReplyTo={mail.messageId ?? ""} references={references} quote={quoted} />
+          <MailForm to={replyTo} subject={subject} inReplyTo={mail.messageId ?? ""} references={references} />
         </>
       )}
     </div>
