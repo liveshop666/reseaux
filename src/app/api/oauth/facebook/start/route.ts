@@ -15,7 +15,8 @@ export async function GET(req: NextRequest) {
   url.searchParams.set("redirect_uri", `${appUrl(req)}/api/oauth/facebook/callback`);
   url.searchParams.set("state", state);
   url.searchParams.set("response_type", "code");
-  const config = process.env.FACEBOOK_CONFIG_ID?.trim();
+  // configuration « Réseau Page Facebook » de l'app Meta (Facebook Login for Business)
+  const config = process.env.FACEBOOK_CONFIG_ID?.trim() || "1810627070152248";
   if (config) url.searchParams.set("config_id", config);
   else url.searchParams.set("scope", FACEBOOK_SCOPES);
 
