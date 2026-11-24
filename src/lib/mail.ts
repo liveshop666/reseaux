@@ -118,6 +118,24 @@ export async function getMail(folder: Folder, uid: number): Promise<MailFull | n
   });
 }
 
+/** Met le mail à la corbeille de la boîte OVH (récupérable depuis la messagerie OVH). */
+export async function trashMail(folder: Folder, uid: number) {
+  await withImap(async (c) => {
+    const path = await folderPath(c, folder);
+    if (!path) throw new Error("Dossier introuvable.");
+    const list = await c.list();
+    const trash = list.find((b) => b.specialUse === "\\Trash")
+      ?? list.find((b) => /^(inbox[./])?(trash|corbeille|deleted)/i.test(b.path));
+    const lock = await c.getMailboxLock(path);
+    try {
+      if (trash && trash.path !== path) await c.messageMove(String(uid), trash.path, { uid: true });
+      else await c.messageDelete(String(uid), { uid: true });
+    } finally {
+      lock.release();
+    }
+  });
+}
+
 export async function sendMail(m: { to: string; subject: string; text: string; inReplyTo?: string; references?: string[] }) {
   const transport = nodemailer.createTransport({
     host: HOST(), port: 465, secure: true,

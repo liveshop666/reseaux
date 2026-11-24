@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { trashMailAction } from "@/app/mail-actions";
+import { ActionButton } from "@/components/ActionButton";
 import { MailForm } from "@/components/MailForm";
 import { PageHeader } from "@/components/ui";
 import { errorMessage, fmtDateTime } from "@/lib/format";
@@ -31,7 +33,12 @@ export default async function MailDetail({ params, searchParams }: { params: P; 
 
   return (
     <div className="mx-auto max-w-3xl">
-      <PageHeader title={<span className="normal-case">{mail.subject}</span>} action={<Link href={back} className="btn-ghost">← Mails</Link>} />
+      <PageHeader title={<span className="normal-case">{mail.subject}</span>} action={
+        <span className="flex gap-2">
+          <ActionButton action={trashMailAction.bind(null, folder, n, true)} label="🗑 Supprimer" pending="Suppression…"
+            confirmText="Mettre ce mail à la corbeille ? (aussi dans ta boîte OVH)" className="btn-danger" />
+          <Link href={back} className="btn-ghost">← Mails</Link>
+        </span>} />
 
       <div className="card mb-6 p-4">
         <dl className="mb-4 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-sm">

@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { trashMailAction } from "@/app/mail-actions";
+import { ActionButton } from "@/components/ActionButton";
 import { Empty, PageHeader } from "@/components/ui";
 import { errorMessage, fmtRelative } from "@/lib/format";
 import { listMails, mailAddress, mailReady, type Folder, type MailSummary } from "@/lib/mail";
@@ -38,8 +40,8 @@ export default async function Mails({ searchParams }: { searchParams: SP }) {
       ) : (
         <ul className="card divide-y divide-border">
           {mails.map((m) => (
-            <li key={m.uid}>
-              <Link href={`/mails/${m.uid}${folder === "sent" ? "?d=sent" : ""}`} className="flex items-baseline gap-3 px-4 py-3 hover:bg-soft">
+            <li key={m.uid} className="group flex items-center hover:bg-soft">
+              <Link href={`/mails/${m.uid}${folder === "sent" ? "?d=sent" : ""}`} className="flex min-w-0 flex-1 items-baseline gap-3 px-4 py-3">
                 <span className={`size-2 shrink-0 rounded-full ${m.seen ? "bg-transparent" : "bg-accent"}`} title={m.seen ? "Lu" : "Non lu"} />
                 <span className="min-w-0 flex-1">
                   <span className={`block truncate text-sm ${m.seen ? "text-muted" : "font-semibold text-text"}`}>{folder === "sent" ? `À : ${m.to}` : m.from}</span>
@@ -47,6 +49,9 @@ export default async function Mails({ searchParams }: { searchParams: SP }) {
                 </span>
                 <span className="shrink-0 text-xs text-muted">{fmtRelative(m.date)}</span>
               </Link>
+              <ActionButton action={trashMailAction.bind(null, folder, m.uid, false)} label="🗑" pending="…"
+                confirmText={`Mettre « ${m.subject} » à la corbeille ? (aussi dans ta boîte OVH)`}
+                className="mr-2 shrink-0 rounded px-2 py-1 text-sm text-muted md:opacity-0 md:group-hover:opacity-100 hover:text-rose-600 focus:opacity-100" />
             </li>
           ))}
         </ul>
