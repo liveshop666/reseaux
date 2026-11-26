@@ -19,7 +19,50 @@ export function mailReady() {
 }
 
 export type Folder = "inbox" | "sent";
-export type MailSummary = { uid: number; from: string; to: string; subject: string; date: string | null; seen: boolean };
+/** « linkedin » = notifications de messages LinkedIn, « cal » = réservations Cal.com, « mail » = le reste. */
+export type Kind = "mail" | "linkedin" | "cal";
+export type MailSummary = { uid: number; from: string; to: string; subject: string; date: string | null; seen: boolean; kind: Kind };
+
+/** Range un mail reçu selon son expéditeur (LinkedIn envoie ses notifications par mail, Cal.com aussi). */
+export function classify(address: string | undefined, subject: string): Kind {
+  const a = (address ?? "").toLowerCase();
+  if (/@([a-z0-9-]+\.)*linkedin\.com$/.test(a)) {
+    // on garde les vrais messages / demandes ; pas les newsletters « offres d'emploi », etc.
+    return /message|inmail|invitation|connect|répond|replied|sent you|vous a envoy|accepted|accepté/i.test(subject + " " + a) || /^(messages|invitations|inmail)/.test(a) ? "linkedin" : "mail";
+  }
+  if (/@([a-z0-9-]+\.)*cal\.com$/.test(a)) return "cal";
+  return "mail";
+}
+
+/** Lien LinkedIn (messagerie / invitation) trouvé dans le mail, pour répondre sur LinkedIn. */
+export function linkedinLink(text: string, html: string | null): string | null {
+  const src = `${text}\n${html ?? ""}`;
+  const urls = [...src.matchAll(/https?:\/\/(?:[a-z0-9-]+\.)*linkedin\.com\/[^\s"'<>)\]]+/gi)].map((m) => m[0].replace(/&amp;/g, "&"));
+  return urls.find((u) => /messaging|\/comm\/.*(message|thread)|inbox|mynetwork|invitation/i.test(u)) ?? urls.find((u) => !/unsubscribe|settings|help|legal/i.test(u)) ?? null;
+}
+
+/** Adresse du client qui a réservé (Cal.com) : première adresse du mail qui n'est ni la nôtre ni cal.com. */
+export function bookingEmail(text: string, html: string | null): string | null {
+  const mine = USER().toLowerCase();
+  const all = `${text}\n${html ?? ""}`.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi) ?? [];
+  return all.map((x) => x.toLowerCase()).find((x) => x !== mine && !/@([a-z0-9-]+\.)*(cal\.com|solvelab\.fr|example\.com)$/.test(x) && !/no-?reply/.test(x)) ?? null;
+}
+
+let unreadCache: { at: number; v: Record<Kind, number> } | null = null;
+/** Nombre de mails non lus par type (pour la pastille du menu) — mis en cache 60 s, jamais bloquant. */
+export async function unreadCounts(): Promise<Record<Kind, number>> {
+  const zero = { mail: 0, linkedin: 0, cal: 0 };
+  if (!mailReady()) return zero;
+  if (unreadCache && Date.now() - unreadCache.at < 60_000) return unreadCache.v;
+  try {
+    const v = { ...zero };
+    for (const m of await listMails("inbox", 60)) if (!m.seen) v[m.kind]++;
+    unreadCache = { at: Date.now(), v };
+    return v;
+  } catch {
+    return unreadCache?.v ?? zero;
+  }
+}
 export type MailFull = MailSummary & {
   fromAddress: string;
   replyTo: string;
@@ -67,13 +110,15 @@ export async function listMails(folder: Folder, limit = 40): Promise<MailSummary
       if (!total) return [];
       const out: MailSummary[] = [];
       for await (const m of c.fetch(`${Math.max(1, total - limit + 1)}:*`, { uid: true, envelope: true, flags: true })) {
+        const subject = m.envelope?.subject || "(sans objet)";
         out.push({
           uid: m.uid,
           from: addr(m.envelope?.from),
           to: addr(m.envelope?.to),
-          subject: m.envelope?.subject || "(sans objet)",
+          subject,
           date: m.envelope?.date ? new Date(m.envelope.date).toISOString() : null,
           seen: m.flags?.has("\\Seen") ?? false,
+          kind: folder === "inbox" ? classify(m.envelope?.from?.[0]?.address, subject) : "mail",
         });
       }
       // du plus récent au plus ancien (date du mail, pas l'ordre d'arrivée dans le dossier)
@@ -106,6 +151,7 @@ export async function getMail(folder: Folder, uid: number): Promise<MailFull | n
         subject: p.subject || "(sans objet)",
         date: p.date ? p.date.toISOString() : null,
         seen: true,
+        kind: folder === "inbox" ? classify(p.from?.value?.[0]?.address, p.subject || "") : "mail",
         messageId: p.messageId ?? null,
         references: refs,
         text: p.text ?? "",
