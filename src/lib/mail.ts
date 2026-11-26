@@ -18,10 +18,11 @@ export function mailReady() {
   return !!process.env.MAIL_PASSWORD?.trim();
 }
 
-export type Folder = "inbox" | "sent";
+export type Folder = "inbox" | "sent" | "spam";
+export const asFolder = (d: string | undefined): Folder => (d === "sent" ? "sent" : d === "spam" ? "spam" : "inbox");
 /** « linkedin » = notifications de messages LinkedIn, « cal » = réservations Cal.com, « mail » = le reste. */
 export type Kind = "mail" | "linkedin" | "cal";
-export type MailSummary = { uid: number; from: string; to: string; subject: string; date: string | null; seen: boolean; kind: Kind };
+export type MailSummary = { uid: number; from: string; to: string; subject: string; date: string | null; seen: boolean; kind: Kind; box: Folder };
 
 /** Range un mail reçu selon son expéditeur (LinkedIn envoie ses notifications par mail, Cal.com aussi). */
 export function classify(address: string | undefined, subject: string): Kind {
@@ -56,7 +57,7 @@ export async function unreadCounts(): Promise<Record<Kind, number>> {
   if (unreadCache && Date.now() - unreadCache.at < 60_000) return unreadCache.v;
   try {
     const v = { ...zero };
-    for (const m of await listMails("inbox", 60)) if (!m.seen) v[m.kind]++;
+    for (const m of await listReceived(60)) if (!m.seen) v[m.kind]++;
     unreadCache = { at: Date.now(), v };
     return v;
   } catch {
@@ -92,6 +93,11 @@ async function withImap<T>(fn: (c: ImapFlow) => Promise<T>): Promise<T> {
 async function folderPath(c: ImapFlow, folder: Folder): Promise<string | null> {
   if (folder === "inbox") return "INBOX";
   const list = await c.list();
+  if (folder === "spam") {
+    const junk = list.find((b) => b.specialUse === "\\Junk")
+      ?? list.find((b) => /^(inbox[./])?(spam|junk|ind[ée]sirable|courrier ind)/i.test(b.path));
+    return junk?.path ?? null;
+  }
   const sent = list.find((b) => b.specialUse === "\\Sent")
     ?? list.find((b) => /^(inbox[./])?(sent|envoy)/i.test(b.path));
   return sent?.path ?? null;
@@ -118,7 +124,8 @@ export async function listMails(folder: Folder, limit = 40): Promise<MailSummary
           subject,
           date: m.envelope?.date ? new Date(m.envelope.date).toISOString() : null,
           seen: m.flags?.has("\\Seen") ?? false,
-          kind: folder === "inbox" ? classify(m.envelope?.from?.[0]?.address, subject) : "mail",
+          kind: folder === "sent" ? "mail" : classify(m.envelope?.from?.[0]?.address, subject),
+          box: folder,
         });
       }
       // du plus récent au plus ancien (date du mail, pas l'ordre d'arrivée dans le dossier)
@@ -127,6 +134,19 @@ export async function listMails(folder: Folder, limit = 40): Promise<MailSummary
       lock.release();
     }
   });
+}
+
+/**
+ * Mails reçus : la boîte de réception + les mails LinkedIn / Cal.com tombés dans le spam
+ * (OVH y range souvent les notifications LinkedIn). Le spam ordinaire reste caché.
+ */
+export async function listReceived(limit = 100): Promise<MailSummary[]> {
+  const [inbox, spam] = await Promise.all([
+    listMails("inbox", limit),
+    listMails("spam", 60).catch(() => [] as MailSummary[]),
+  ]);
+  return [...inbox, ...spam.filter((m) => m.kind !== "mail")]
+    .sort((a, b) => (b.date ?? "").localeCompare(a.date ?? ""));
 }
 
 export async function getMail(folder: Folder, uid: number): Promise<MailFull | null> {
@@ -151,7 +171,8 @@ export async function getMail(folder: Folder, uid: number): Promise<MailFull | n
         subject: p.subject || "(sans objet)",
         date: p.date ? p.date.toISOString() : null,
         seen: true,
-        kind: folder === "inbox" ? classify(p.from?.value?.[0]?.address, p.subject || "") : "mail",
+        kind: folder === "sent" ? "mail" : classify(p.from?.value?.[0]?.address, p.subject || ""),
+        box: folder,
         messageId: p.messageId ?? null,
         references: refs,
         text: p.text ?? "",

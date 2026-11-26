@@ -3,13 +3,13 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { errorMessage } from "@/lib/format";
-import { sendMail, trashMail } from "@/lib/mail";
+import { asFolder, sendMail, trashMail, type Folder } from "@/lib/mail";
 
 /** Met un mail à la corbeille (aussi dans la boîte OVH). */
-export async function trashMailAction(folder: "inbox" | "sent", uid: number, goBack = false): Promise<{ error?: string }> {
+export async function trashMailAction(folder: Folder, uid: number, goBack = false): Promise<{ error?: string }> {
   await requireUser();
   try {
-    await trashMail(folder === "sent" ? "sent" : "inbox", uid);
+    await trashMail(asFolder(folder), uid);
   } catch (e) {
     return { error: `Suppression impossible : ${errorMessage(e)}` };
   }
