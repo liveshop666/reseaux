@@ -5,7 +5,7 @@ import { ActionButton } from "@/components/ActionButton";
 import { MailForm } from "@/components/MailForm";
 import { PageHeader } from "@/components/ui";
 import { errorMessage, fmtDateTime } from "@/lib/format";
-import { bookingEmail, getMail, linkedinLink, type Folder, type MailFull } from "@/lib/mail";
+import { asFolder, bookingEmail, getMail, linkedinLink, type Folder, type MailFull } from "@/lib/mail";
 
 export const dynamic = "force-dynamic";
 
@@ -15,7 +15,7 @@ type SP = Promise<{ d?: string }>;
 export default async function MailDetail({ params, searchParams }: { params: P; searchParams: SP }) {
   const { uid } = await params;
   const sp = await searchParams;
-  const folder: Folder = sp.d === "sent" ? "sent" : "inbox";
+  const folder: Folder = asFolder(sp.d);
   const n = Number(uid);
   if (!Number.isInteger(n) || n <= 0) notFound();
 
@@ -62,7 +62,7 @@ export default async function MailDetail({ params, searchParams }: { params: P; 
         )}
       </div>
 
-      {folder === "inbox" && mail.kind === "linkedin" && (
+      {folder !== "sent" && mail.kind === "linkedin" && (
         <div className="card p-4 text-sm">
           LinkedIn ne permet pas de répondre depuis un autre outil : le bouton ouvre la conversation, tu réponds là-bas.
           <div className="mt-3">
@@ -70,10 +70,10 @@ export default async function MailDetail({ params, searchParams }: { params: P; 
           </div>
         </div>
       )}
-      {folder === "inbox" && mail.kind === "cal" && !replyTo && (
+      {folder !== "sent" && mail.kind === "cal" && !replyTo && (
         <div className="card p-4 text-sm text-muted">Adresse du client introuvable dans ce mail : ouvre la réservation sur cal.com.</div>
       )}
-      {folder === "inbox" && replyTo && (
+      {folder !== "sent" && replyTo && (
         <>
           <h2 className="mb-2 font-semibold">{mail.kind === "cal" ? `Écrire au client (${replyTo})` : "Répondre"}</h2>
           <MailForm to={replyTo} subject={subject} inReplyTo={mail.messageId ?? ""} references={references} />
