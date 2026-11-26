@@ -55,7 +55,7 @@ function Conversations({ items }: { items: ConversationItem[] }) {
   );
 }
 
-export function Nav({ scheduled, errors, conversations }: { scheduled: number; errors: number; conversations: ConversationItem[] }) {
+export function Nav({ scheduled, errors, unread, unreadSpecial, conversations }: { scheduled: number; errors: number; unread: number; unreadSpecial: number; conversations: ConversationItem[] }) {
   const path = usePathname();
   const active = (href: string) => (href === "/" ? path === "/" : path.startsWith(href));
   const link = (l: { href: string; label: string; icon: string }) => (
@@ -63,6 +63,7 @@ export function Nav({ scheduled, errors, conversations }: { scheduled: number; e
       className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm ${active(l.href) ? "bg-accent/15 font-semibold text-text shadow-[inset_3px_0_0_var(--accent)]" : "text-muted hover:bg-soft hover:text-text"}`}>
       <span>{l.icon}</span>{l.label}
       {l.href === "/historique" && errors > 0 && <span className="ml-auto rounded-full bg-rose-500 px-1.5 text-xs text-white" title="Publications en erreur">{errors}</span>}
+      {l.href === "/mails" && unread > 0 && <span className={`ml-auto rounded-full px-1.5 text-xs text-white ${unreadSpecial > 0 ? "bg-rose-500" : "bg-accent"}`} title={unreadSpecial > 0 ? "Nouveau message LinkedIn / réservation" : "Mails non lus"}>{unread}</span>}
     </Link>
   );
 
@@ -88,6 +89,7 @@ export function Nav({ scheduled, errors, conversations }: { scheduled: number; e
           <Link key={l.href} href={l.href} className={`relative flex min-w-[4.5rem] flex-1 flex-col items-center py-2 text-[10px] ${active(l.href) ? "font-semibold text-accent" : "text-muted"}`}>
             <span className="text-lg">{l.icon}</span>{l.label}
             {l.href === "/historique" && errors > 0 && <span className="absolute top-1 right-[28%] size-2 rounded-full bg-rose-500" />}
+            {l.href === "/mails" && unread > 0 && <span className={`absolute top-1 right-[28%] size-2 rounded-full ${unreadSpecial > 0 ? "bg-rose-500" : "bg-accent"}`} />}
           </Link>
         ))}
       </nav>

@@ -5,7 +5,7 @@ import { ActionButton } from "@/components/ActionButton";
 import { MailForm } from "@/components/MailForm";
 import { PageHeader } from "@/components/ui";
 import { errorMessage, fmtDateTime } from "@/lib/format";
-import { getMail, type Folder, type MailFull } from "@/lib/mail";
+import { bookingEmail, getMail, linkedinLink, type Folder, type MailFull } from "@/lib/mail";
 
 export const dynamic = "force-dynamic";
 
@@ -26,7 +26,10 @@ export default async function MailDetail({ params, searchParams }: { params: P; 
   if (error) return <div className="mx-auto max-w-3xl"><div className="card border-rose-500/40 p-4 text-sm">⚠️ {error}</div></div>;
   if (!mail) notFound();
 
-  const replyTo = mail.replyTo || mail.fromAddress;
+  const liLink = mail.kind === "linkedin" ? linkedinLink(mail.text, mail.html) : null;
+  const guest = mail.kind === "cal" ? bookingEmail(mail.text, mail.html) : null;
+  // LinkedIn / Cal.com : on ne répond pas à l'adresse « no-reply » de la notification
+  const replyTo = mail.kind === "linkedin" ? "" : mail.kind === "cal" ? (guest ?? "") : mail.replyTo || mail.fromAddress;
   const subject = /^re\s*:/i.test(mail.subject) ? mail.subject : `Re: ${mail.subject}`;
   const references = [...mail.references, mail.messageId].filter(Boolean).join(" ");
 
@@ -59,9 +62,20 @@ export default async function MailDetail({ params, searchParams }: { params: P; 
         )}
       </div>
 
+      {folder === "inbox" && mail.kind === "linkedin" && (
+        <div className="card p-4 text-sm">
+          LinkedIn ne permet pas de répondre depuis un autre outil : le bouton ouvre la conversation, tu réponds là-bas.
+          <div className="mt-3">
+            <a href={liLink ?? "https://www.linkedin.com/messaging/"} target="_blank" rel="noopener noreferrer" className="btn-primary">💼 Répondre sur LinkedIn</a>
+          </div>
+        </div>
+      )}
+      {folder === "inbox" && mail.kind === "cal" && !replyTo && (
+        <div className="card p-4 text-sm text-muted">Adresse du client introuvable dans ce mail : ouvre la réservation sur cal.com.</div>
+      )}
       {folder === "inbox" && replyTo && (
         <>
-          <h2 className="mb-2 font-semibold">Répondre</h2>
+          <h2 className="mb-2 font-semibold">{mail.kind === "cal" ? `Écrire au client (${replyTo})` : "Répondre"}</h2>
           <MailForm to={replyTo} subject={subject} inReplyTo={mail.messageId ?? ""} references={references} />
         </>
       )}
