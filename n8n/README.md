@@ -18,7 +18,7 @@ Les fichiers sont générés par [`generer_workflows.py`](generer_workflows.py) 
 
 | Paramètre | Exemple | Obligatoire |
 |---|---|---|
-| `url_studio` | `https://studio-reseaux.vercel.app` | oui (tant qu'il contient `A_REMPLIR`, rien ne part) |
+| `url_studio` | `https://studio-reseaux-ecru.vercel.app` | oui (tant qu'il contient `A_REMPLIR`, rien ne part) |
 | `linkedin_personne` | `AbC123xyz` (le nœud LinkedIn le propose dans sa liste) | si LinkedIn |
 | `linkedin_page` | `12345678` (id numérique de la page) | si LinkedIn au nom de la page |
 | `instagram_compte_id` | `17841400000000000` | si Instagram |
