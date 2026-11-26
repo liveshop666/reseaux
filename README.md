@@ -37,6 +37,7 @@ Je parle à un assistant comme dans Claude Code (bouton **+** pour mes photos et
 | `/` | la conversation (bouton « Nouvelle conversation » dans le menu) |
 | `/reseau/youtube` · `tiktok` · `instagram` · `linkedin` · `google` | tout ce qui a été publié / programmé / en erreur pour ce réseau, avec miniature, lien, Relancer, Annuler |
 | `/historique` | « Tout » : chaque post réseau par réseau, filtres statut / réseau |
+| `/mails` | boîte contact@solvelab.fr (IMAP/SMTP OVH) : reçus, envoyés, répondre, corbeille. En dessous : **💼 Messages LinkedIn** et **📅 Réservations Cal.com**, repérés par l'expéditeur des mails de notification (aussi lus dans le spam OVH). Pastille du menu : rouge si LinkedIn / réservation non lus. LinkedIn : bouton qui ouvre la conversation (pas de réponse possible hors LinkedIn) ; Cal.com : réponse au client pré-remplie. Côté LinkedIn, fréquence des mails Messages / InMail = « Individuelle ». |
 | `/comptes` | état de chaque réseau, limites connues, étapes pour le brancher, LinkedIn en mon nom ou au nom de la page, bouton « Connecter TikTok » |
 
 ## Installation
